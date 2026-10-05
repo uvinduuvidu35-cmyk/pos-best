@@ -346,7 +346,7 @@
         <div class="top-header">
             <h1>Inventory Management</h1>
             <div class="user-profile">
-                <button class="theme-btn" onclick="toggleTheme()">🌓 Theme</button>
+                <button class="theme-btn" id="themeToggleBtn">🌓 Theme</button>
                 <div class="welcome-badge">
                     <div class="avatar">M</div>
                     <span>Welcome, M4K</span>
@@ -362,7 +362,7 @@
                     <label>Barcode / Item Code</label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="barcodeInput" class="form-control" placeholder="Scan or Type Barcode..." autofocus>
-                        <button class="btn btn-secondary" onclick="generateAutoBarcode()" type="button">Auto</button>
+                        <button class="btn btn-secondary" id="autoBarcodeBtn" type="button">Auto</button>
                     </div>
                 </div>
 
@@ -405,7 +405,7 @@
                 </div>
 
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="btnSave">Save & Print Tag</button>
+                    <button class="btn btn-primary" id="saveProductBtn" type="button">Save Product</button>
                 </div>
             </div>
 
@@ -445,7 +445,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔥 ඔයාගේ Firebase Console එකෙන් ලැබෙන Config එක මෙතනට ආදේශ කරන්න
+        // 🔥 ඔයාගේ Firebase Console එකෙන් ලැබෙන Config විස්තර මෙතනට ඇතුළත් කරන්න
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -468,14 +468,21 @@
             document.documentElement.setAttribute('data-theme', savedTheme);
         });
 
-        // Firebase Realtime Listener
-        onValue(inventoryRef, (snapshot) => {
-            const data = snapshot.val();
-            globalInventory = data || {};
-            renderTable(globalInventory);
-        });
+        // Theme Toggle Function
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
 
-        // Save Function
+        // Auto Barcode Generator
+        function generateAutoBarcode() {
+            const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('barcodeInput').value = autoCode;
+        }
+
+        // Save Product (No Auto-Print, Clear Form)
         function saveProduct() {
             const barcode = document.getElementById('barcodeInput').value.trim();
             const name = document.getElementById('itemName').value.trim();
@@ -495,7 +502,7 @@
             // Firebase Database එකට Save කිරීම
             set(ref(db, 'inventory/' + barcode), itemData)
                 .then(() => {
-                    printItemBarcode(barcode, name, category, gender, size, price);
+                    alert("Product එක සාර්ථකව Save වුණා!");
                     clearForm();
                 })
                 .catch((error) => {
@@ -503,19 +510,20 @@
                 });
         }
 
-        // Save Button එකට Event Listener එක සම්බන්ධ කිරීම
-        document.getElementById('btnSave').addEventListener('click', saveProduct);
+        // Clear Form
+        function clearForm() {
+            document.getElementById('barcodeInput').value = '';
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemStock').value = '';
+            document.getElementById('itemSize').value = '';
+        }
 
-        window.deleteProduct = function(barcode) {
-            if (confirm(`ඔබට निश्चितවම '${barcode}' බාර්කෝඩ් එක සහිත භාණ්ඩය ඉවත් කිරීමට අවශ්‍යද?`)) {
-                remove(ref(db, 'inventory/' + barcode))
-                    .catch((error) => alert("ඉවත් කිරීමට නොහැකි විය: " + error.message));
-            }
-        };
-
+        // Populate Product Details for Editing/Viewing
         window.populateProductDetails = function(barcode) {
             const item = globalInventory[barcode];
             if (item) {
+                document.getElementById('barcodeInput').value = item.barcode;
                 document.getElementById('itemName').value = item.name;
                 document.getElementById('productCategory').value = item.category;
                 document.getElementById('targetGender').value = item.gender;
@@ -527,18 +535,15 @@
             }
         };
 
-        window.generateAutoBarcode = function() {
-            const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('barcodeInput').value = autoCode;
+        // Delete Product
+        window.deleteProduct = function(barcode) {
+            if (confirm(`ඔබට ස්ථිරවම '${barcode}' බාර්කෝඩ් එක සහිත භාණ්ඩය ඉවත් කිරීමට අවශ්‍යද?`)) {
+                remove(ref(db, 'inventory/' + barcode))
+                    .catch((error) => alert("ඉවත් කිරීමට නොහැකි විය: " + error.message));
+            }
         };
 
-        window.toggleTheme = function() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        };
-
+        // Print Tag (Manual Option)
         window.printItemBarcode = function(barcode, name, category, gender, size, price) {
             document.getElementById('lblItemName').textContent = name;
             document.getElementById('lblCategoryGender').textContent = `${category} | ${gender}`;
@@ -558,6 +563,7 @@
             document.getElementById('printableLabel').style.display = 'none';
         };
 
+        // Realtime Table Render
         function renderTable(data) {
             const tableBody = document.getElementById('inventoryTable');
             tableBody.innerHTML = '';
@@ -588,20 +594,25 @@
             });
         }
 
-        function clearForm() {
-            document.getElementById('barcodeInput').value = '';
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemPrice').value = '';
-            document.getElementById('itemStock').value = '';
-            document.getElementById('itemSize').value = '';
-        }
+        // Firebase Realtime Listener
+        onValue(inventoryRef, (snapshot) => {
+            const data = snapshot.val();
+            globalInventory = data || {};
+            renderTable(globalInventory);
+        });
 
+        // Attach Event Listeners Safely
+        document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+        document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
+        document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
+
+        // Barcode Input Enter Event
         const barcodeInput = document.getElementById('barcodeInput');
         barcodeInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const barcode = barcodeInput.value.trim();
-                if(barcode) {
+                if (barcode) {
                     populateProductDetails(barcode);
                 }
             }
