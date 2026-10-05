@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root {
-            /* Dark Theme Colors (Default) */
             --bg-color: #0b0d14;
             --card-bg: rgba(255, 255, 255, 0.04);
             --card-border: rgba(255, 255, 255, 0.1);
@@ -25,7 +24,6 @@
         }
 
         [data-theme="light"] {
-            /* Light Theme Colors */
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --card-border: #e2e8f0;
@@ -216,7 +214,6 @@
             outline: none;
         }
 
-        /* Dropdown Option Text Color Fix */
         .form-select option {
             background-color: var(--option-bg);
             color: var(--option-text);
@@ -347,7 +344,7 @@
         <div class="top-header">
             <h1>Inventory Management</h1>
             <div class="user-profile">
-                <button class="theme-btn" onclick="toggleTheme()">🌓 Theme</button>
+                <button class="theme-btn" onclick="window.toggleTheme()">🌓 Theme</button>
                 <div class="welcome-badge">
                     <div class="avatar">M</div>
                     <span>Welcome, M4K</span>
@@ -363,7 +360,7 @@
                     <label>Barcode / Item Code</label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="barcodeInput" class="form-control" placeholder="Scan or Type Barcode..." autofocus>
-                        <button class="btn btn-secondary" onclick="generateAutoBarcode()" type="button">Auto</button>
+                        <button class="btn btn-secondary" onclick="window.generateAutoBarcode()" type="button">Auto</button>
                     </div>
                 </div>
 
@@ -406,7 +403,7 @@
                 </div>
 
                 <div class="btn-group">
-                    <button class="btn btn-primary" onclick="saveProduct()">Save & Print Tag</button>
+                    <button class="btn btn-primary" onclick="window.saveProduct()" type="button">Save & Print Tag</button>
                 </div>
             </div>
 
@@ -441,12 +438,12 @@
         <svg id="labelBarcode"></svg>
     </div>
 
-    <!-- Firebase Modular SDK Scripts -->
+    <!-- Firebase Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔥 ඔයාගේ Firebase Config එක මෙතනට දාන්න
+        // 🔥 Firebase Config එක මෙතනට දාන්න
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -463,20 +460,25 @@
 
         let globalInventory = {};
 
-        // Page load වෙනකොට Theme එක සෙට් කිරීම
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
         });
 
-        // Firebase Realtime Listener (Data වෙනස්වන සැනින් Realtime Sync වේ)
+        // Realtime Updates
         onValue(inventoryRef, (snapshot) => {
             const data = snapshot.val();
             globalInventory = data || {};
             renderTable(globalInventory);
         });
 
-        // Window Object එකට Functions Attach කිරීම (Inline onclick වැඩ කිරීමට)
+        // Auto Barcode Generator
+        window.generateAutoBarcode = function() {
+            const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('barcodeInput').value = autoCode;
+        };
+
+        // Save Function
         window.saveProduct = function() {
             const barcode = document.getElementById('barcodeInput').value.trim();
             const name = document.getElementById('itemName').value.trim();
@@ -493,10 +495,9 @@
 
             const itemData = { barcode, name, category, gender, size, price, stock };
 
-            // Firebase Database එකේ Barcode එක Key එක විදියට direct Save කිරීම
             set(ref(db, 'inventory/' + barcode), itemData)
                 .then(() => {
-                    printItemBarcode(barcode, name, category, gender, size, price);
+                    window.printItemBarcode(barcode, name, category, gender, size, price);
                     clearForm();
                 })
                 .catch((error) => {
@@ -504,6 +505,7 @@
                 });
         };
 
+        // Delete Function
         window.deleteProduct = function(barcode) {
             if (confirm(`ඔබට निश्चितවම '${barcode}' බාර්කෝඩ් එක සහිත භාණ්ඩය ඉවත් කිරීමට අවශ්‍යද?`)) {
                 remove(ref(db, 'inventory/' + barcode))
@@ -511,25 +513,7 @@
             }
         };
 
-        window.populateProductDetails = function(barcode) {
-            const item = globalInventory[barcode];
-            if (item) {
-                document.getElementById('itemName').value = item.name;
-                document.getElementById('productCategory').value = item.category;
-                document.getElementById('targetGender').value = item.gender;
-                document.getElementById('itemSize').value = item.size;
-                document.getElementById('itemPrice').value = item.price;
-                document.getElementById('itemStock').value = item.stock;
-            } else {
-                alert("මෙම බාර්කෝඩ් එකට අදාළ භාණ්ඩයක් නොමැත. නව භාණ්ඩයේ විස්තර ඇතුළත් කරන්න.");
-            }
-        };
-
-        window.generateAutoBarcode = function() {
-            const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('barcodeInput').value = autoCode;
-        };
-
+        // Theme Toggle
         window.toggleTheme = function() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -537,6 +521,7 @@
             localStorage.setItem('theme', newTheme);
         };
 
+        // Print Tag Function
         window.printItemBarcode = function(barcode, name, category, gender, size, price) {
             document.getElementById('lblItemName').textContent = name;
             document.getElementById('lblCategoryGender').textContent = `${category} | ${gender}`;
@@ -578,8 +563,8 @@
                     <td>${Number(item.price).toFixed(2)}</td>
                     <td>${item.stock}</td>
                     <td style="display: flex; gap: 5px;">
-                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${item.barcode}', '${item.name}', '${item.category}', '${item.gender}', '${item.size}', ${item.price})">Print Tag</button>
-                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteProduct('${item.barcode}')">Delete</button>
+                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="window.printItemBarcode('${item.barcode}', '${item.name}', '${item.category}', '${item.gender}', '${item.size}', ${item.price})">Print Tag</button>
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="window.deleteProduct('${item.barcode}')">Delete</button>
                     </td>
                 `;
                 tableBody.appendChild(tr);
@@ -593,18 +578,6 @@
             document.getElementById('itemStock').value = '';
             document.getElementById('itemSize').value = '';
         }
-
-        // Barcode enter key press event listener
-        const barcodeInput = document.getElementById('barcodeInput');
-        barcodeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const barcode = barcodeInput.value.trim();
-                if(barcode) {
-                    populateProductDetails(barcode);
-                }
-            }
-        });
     </script>
 </body>
 </html>
