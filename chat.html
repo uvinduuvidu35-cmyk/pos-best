@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCK Footwear - Charts & Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* Dark Theme Colors */
+            --bg-color: #0b0d14;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+            --primary-blue: #0088ff;
+            --gradient-start: #0284c7;
+            --gradient-end: #0369a1;
+            --glow-color: rgba(0, 136, 255, 0.3);
+            --sidebar-bg: #0f172a;
+            --input-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="light"] {
+            /* Light Theme Colors */
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --primary-blue: #0284c7;
+            --gradient-start: #0284c7;
+            --gradient-end: #0369a1;
+            --glow-color: rgba(2, 132, 199, 0.15);
+            --sidebar-bg: #ffffff;
+            --input-bg: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            min-height: 100vh;
+            display: flex;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            padding: 25px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .sidebar-brand h2 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            list-style: none;
+        }
+
+        .nav-links li a {
+            display: block;
+            padding: 12px 16px;
+            color: var(--text-sub);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .nav-links li a:hover, .nav-links li a.active {
+            background: rgba(0, 136, 255, 0.15);
+            color: var(--primary-blue);
+            border: 1px solid var(--primary-blue);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .welcome-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .theme-btn, .lang-select {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .lang-select option {
+            background-color: var(--sidebar-bg);
+            color: var(--text-main);
+        }
+
+        .control-group {
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-select {
+            padding: 10px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            width: 280px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div>
+            <div class="sidebar-brand">
+                <h2>DCK Footwear</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="dashboard.html" data-i18n="navDashboard">Dashboard</a></li>
+                <li><a href="sales.html" data-i18n="navSales">Sales & Billing</a></li>
+                <li><a href="inventory.html" data-i18n="navInventory">Inventory</a></li>
+                <li><a href="Customer.html" data-i18n="navCustomers">Customers</a></li>
+                <li><a href="chart.html" class="active" data-i18n="navCharts">Charts</a></li>
+                <li><a href="settings.html" data-i18n="navSettings">Settings</a></li>
+            </ul>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html" data-i18n="navSignOut">Sign Out</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-header">
+            <h1 id="pageTitle" data-i18n="pageTitle">Charts & Analytics</h1>
+            <div class="user-profile">
+                <!-- Language Switcher Dropdown -->
+                <select class="lang-select" id="langSelector" onchange="changeLanguage(this.value)">
+                    <option value="en">🌐 English</option>
+                    <option value="si">🌐 සිංහල</option>
+                </select>
+
+                <button class="theme-btn" onclick="toggleTheme()">🌓 Theme</button>
+                <div class="welcome-badge">
+                    <div class="avatar">M</div>
+                    <span id="welcomeText" data-i18n="welcome">Welcome, M4K</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Section: Switchable Doughnut Charts -->
+        <section>
+            <div class="control-group">
+                <label id="lblSelectView" data-i18n="lblSelectView" style="font-size: 13px; color: var(--text-sub); display: block; margin-bottom: 8px;">Select Top View Type:</label>
+                <select id="topChartSelector" class="form-select" onchange="updateTopCharts()">
+                    <option value="gender" data-i18n="optTargetAudience">Target Audience (Men/Female/Kids)</option>
+                    <option value="category" data-i18n="optProductCategory">Product Categories (Shoe/Slipper/Umbrella)</option>
+                </select>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card">
+                    <h2 class="section-title" id="titleChart1">Men / Female</h2>
+                    <div class="chart-container">
+                        <canvas id="chartTop1"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2 class="section-title" id="titleChart2">Kids</h2>
+                    <div class="chart-container">
+                        <canvas id="chartTop2"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2 class="section-title" id="titleChart3">Others</h2>
+                    <div class="chart-container">
+                        <canvas id="chartTop3"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Section: Fixed Bar Charts -->
+        <section>
+            <h2 class="section-title" id="salesAnalyticsTitle" data-i18n="salesAnalyticsTitle" style="margin-bottom: 20px;">Sales Analytics</h2>
+            <div class="charts-grid">
+                <div class="card">
+                    <h2 class="section-title" id="titleDailySales" data-i18n="titleDailySales">Daily Sales</h2>
+                    <div class="chart-container">
+                        <canvas id="chartDailySales"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2 class="section-title" id="titleWeeklySales" data-i18n="titleWeeklySales">Weekly Sales</h2>
+                    <div class="chart-container">
+                        <canvas id="chartWeeklySales"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2 class="section-title" id="titleMonthlySales" data-i18n="titleMonthlySales">Monthly Sales</h2>
+                    <div class="chart-container">
+                        <canvas id="chartMonthlySales"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let chart1, chart2, chart3;
+        let chartDaily, chartWeekly, chartMonthly;
+        let currentLang = localStorage.getItem('lang') || 'en';
+
+        // Translation Dictionary
+        const translations = {
+            en: {
+                pageTitle: "Charts & Analytics",
+                welcome: "Welcome, M4K",
+                navDashboard: "Dashboard",
+                navSales: "Sales & Billing",
+                navInventory: "Inventory",
+                navCustomers: "Customers",
+                navCharts: "Charts",
+                navSettings: "Settings",
+                navSignOut: "Sign Out",
+                lblSelectView: "Select Top View Type:",
+                optTargetAudience: "Target Audience (Men/Female/Kids)",
+                optProductCategory: "Product Categories (Shoe/Slipper/Umbrella)",
+                salesAnalyticsTitle: "Sales Analytics",
+                titleDailySales: "Daily Sales",
+                titleWeeklySales: "Weekly Sales",
+                titleMonthlySales: "Monthly Sales",
+                days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                weeks: ['W1', 'W2', 'W3', 'W4'],
+                months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+            },
+            si: {
+                pageTitle: "ප්‍රස්ථාර සහ විශ්ලේෂණ",
+                welcome: "සාදරයෙන් පිළිගනිමු, M4K",
+                navDashboard: "මුල් පිටුව",
+                navSales: "විකුණුම් සහ බිල්පත්",
+                navInventory: "තොග තොරතුරු",
+                navCustomers: "පාරිභෝගිකයින්",
+                navCharts: "ප්‍රස්ථාර",
+                navSettings: "සැකසුම්",
+                navSignOut: "නික්මෙන්න",
+                lblSelectView: "ඉහළ දර්ශන වර්ගය තෝරන්න:",
+                optTargetAudience: "ඉලක්කගත පාරිභෝගිකයින් (පිරිමි/ගැහැණු/ළමා)",
+                optProductCategory: "භාණ්ඩ වර්ගීකරණය (සපත්තු/සෙරෙප්පු/කුඩ)",
+                salesAnalyticsTitle: "විකුණුම් විශ්ලේෂණය",
+                titleDailySales: "දෛනික විකුණුම්",
+                titleWeeklySales: "සතිපතා විකුණුම්",
+                titleMonthlySales: "මාසික විකුණුම්",
+                days: ['සඳුදා', 'අඟහ', 'බදාදා', 'බ්‍රහස්', 'සිකු', 'සෙන', 'ඉරිදා'],
+                weeks: ['1 සතිය', '2 සතිය', '3 සතිය', '4 සතිය'],
+                months: ['ජන', 'පෙබ', 'මාර්තු', 'අප්‍රේල්', 'මැයි', 'ජූනි']
+            }
+        };
+
+        const chartData = {
+            en: {
+                gender: {
+                    title1: "Target Audience Distribution",
+                    title2: "Demographic Breakdown",
+                    title3: "Other Segments",
+                    chart1: { labels: ['Male', 'Female', 'Kids'], data: [35, 45, 20] },
+                    chart2: { labels: ['Men', 'Women', 'Children'], data: [40, 40, 20] },
+                    chart3: { labels: ['Unisex', 'Other'], data: [60, 40] }
+                },
+                category: {
+                    title1: "Footwear Categories",
+                    title2: "Accessory Categories",
+                    title3: "Gender Split in Shoes",
+                    chart1: { labels: ['Shoes', 'Slippers'], data: [60, 40] },
+                    chart2: { labels: ['Umbrellas', 'Caps', 'Others'], data: [50, 30, 20] },
+                    chart3: { labels: ['Male Shoes', 'Female Shoes'], data: [55, 45] }
+                }
+            },
+            si: {
+                gender: {
+                    title1: "ඉලක්කගත පාරිභෝගික බෙදාහැරීම",
+                    title2: "ජනගහන වර්ගීකරණය",
+                    title3: "වෙනත් අංශ",
+                    chart1: { labels: ['පිරිමි', 'ගැහැණු', 'ළමා'], data: [35, 45, 20] },
+                    chart2: { labels: ['පිරිමි', 'කාන්තා', 'ළමුන්'], data: [40, 40, 20] },
+                    chart3: { labels: ['පොදු (Unisex)', 'වෙනත්'], data: [60, 40] }
+                },
+                category: {
+                    title1: "පාගමන උපකරණ වර්ග",
+                    title2: "අමතර උපාංග වර්ග",
+                    title3: "සපත්තු වල ස්ත්‍රී/පුරුෂ බෙදීම",
+                    chart1: { labels: ['සපත්තු', 'සෙරෙප්පු'], data: [60, 40] },
+                    chart2: { labels: ['කුඩ', 'තොප්පි', 'වෙනත්'], data: [50, 30, 20] },
+                    chart3: { labels: ['පිරිමි සපත්තු', 'කාන්තා සපත්තු'], data: [55, 45] }
+                }
+            }
+        };
+
+        window.onload = () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            document.getElementById('langSelector').value = currentLang;
+            applyTranslations();
+
+            initTopCharts();
+            initSalesCharts();
+        };
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Re-render charts to adapt colors
+            updateTopCharts();
+            updateBottomChartsTheme();
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            applyTranslations();
+            updateTopCharts();
+            updateSalesChartsLanguage();
+        }
+
+        function applyTranslations() {
+            const langData = translations[currentLang];
+            
+            // Text Elements Translation
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (langData[key]) {
+                    el.textContent = langData[key];
+                }
+            });
+        }
+
+        function initTopCharts() {
+            const ctx1 = document.getElementById('chartTop1').getContext('2d');
+            const ctx2 = document.getElementById('chartTop2').getContext('2d');
+            const ctx3 = document.getElementById('chartTop3').getContext('2d');
+
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-main') } } }
+            };
+
+            chart1 = new Chart(ctx1, { type: 'doughnut', data: { labels: [], datasets: [{ data: [] }] }, options: commonOptions });
+            chart2 = new Chart(ctx2, { type: 'doughnut', data: { labels: [], datasets: [{ data: [] }] }, options: commonOptions });
+            chart3 = new Chart(ctx3, { type: 'doughnut', data: { labels: [], datasets: [{ data: [] }] }, options: commonOptions });
+
+            updateTopCharts();
+        }
+
+        function updateTopCharts() {
+            const type = document.getElementById('topChartSelector').value;
+            const data = chartData[currentLang][type];
+
+            document.getElementById('titleChart1').textContent = data.title1;
+            document.getElementById('titleChart2').textContent = data.title2;
+            document.getElementById('titleChart3').textContent = data.title3;
+
+            updateChartData(chart1, data.chart1);
+            updateChartData(chart2, data.chart2);
+            updateChartData(chart3, data.chart3);
+        }
+
+        function updateChartData(chart, newData) {
+            chart.data.labels = newData.labels;
+            chart.data.datasets[0].data = newData.data;
+            chart.data.datasets[0].backgroundColor = ['#0088ff', '#0284c7', '#0369a1', '#94a3b8'];
+            chart.options.plugins.legend.labels.color = getComputedStyle(document.documentElement).getPropertyValue('--text-main');
+            chart.update();
+        }
+
+        function initSalesCharts() {
+            const ctxDaily = document.getElementById('chartDailySales').getContext('2d');
+            const ctxWeekly = document.getElementById('chartWeeklySales').getContext('2d');
+            const ctxMonthly = document.getElementById('chartMonthlySales').getContext('2d');
+
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-sub') }, grid: { color: 'transparent' } },
+                    y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-sub') }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--card-border') } }
+                }
+            };
+
+            chartDaily = new Chart(ctxDaily, { 
+                type: 'bar', 
+                data: { labels: translations[currentLang].days, datasets: [{ data: [1200, 1900, 3000, 5000, 2400, 3100, 2000], backgroundColor: '#0088ff' }] }, 
+                options: commonOptions 
+            });
+
+            chartWeekly = new Chart(ctxWeekly, { 
+                type: 'bar', 
+                data: { labels: translations[currentLang].weeks, datasets: [{ data: [12000, 15000, 19000, 16000], backgroundColor: '#0284c7' }] }, 
+                options: commonOptions 
+            });
+
+            chartMonthly = new Chart(ctxMonthly, { 
+                type: 'line', 
+                data: { labels: translations[currentLang].months, datasets: [{ data: [50000, 60000, 55000, 70000, 65000, 80000], borderColor: '#0088ff', fill: true, backgroundColor: 'rgba(0, 136, 255, 0.1)' }] }, 
+                options: commonOptions 
+            });
+        }
+
+        function updateSalesChartsLanguage() {
+            if (chartDaily && chartWeekly && chartMonthly) {
+                chartDaily.data.labels = translations[currentLang].days;
+                chartWeekly.data.labels = translations[currentLang].weeks;
+                chartMonthly.data.labels = translations[currentLang].months;
+
+                chartDaily.update();
+                chartWeekly.update();
+                chartMonthly.update();
+            }
+        }
+
+        function updateBottomChartsTheme() {
+            const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-main');
+            const subColor = getComputedStyle(document.documentElement).getPropertyValue('--text-sub');
+            const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--card-border');
+
+            [chartDaily, chartWeekly, chartMonthly].forEach(chart => {
+                chart.options.scales.x.ticks.color = subColor;
+                chart.options.scales.y.ticks.color = subColor;
+                chart.options.scales.y.grid.color = borderColor;
+                chart.options.plugins.legend.labels.color = textColor;
+                chart.update();
+            });
+        }
+    </script>
+</body>
+</html>
