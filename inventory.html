@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root {
-            /* Dark Theme Colors (Default) */
             --bg-color: #0b0d14;
             --card-bg: rgba(255, 255, 255, 0.04);
             --card-border: rgba(255, 255, 255, 0.1);
@@ -25,7 +24,6 @@
         }
 
         [data-theme="light"] {
-            /* Light Theme Colors */
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --card-border: #e2e8f0;
@@ -440,7 +438,7 @@
         <svg id="labelBarcode"></svg>
     </div>
 
-    <!-- Firebase Modular SDK Scripts -->
+    <!-- Firebase Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -462,13 +460,27 @@
 
         let globalInventory = {};
 
-        // Page load වෙනකොට Theme එක සෙට් කිරීම
-        window.addEventListener('DOMContentLoaded', () => {
+        // DOM Load වූ පසු Event Listeners සම්බන්ධ කිරීම
+        document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
+
+            document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+            document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
+            document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
+
+            const barcodeInput = document.getElementById('barcodeInput');
+            barcodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const barcode = barcodeInput.value.trim();
+                    if (barcode) {
+                        populateProductDetails(barcode);
+                    }
+                }
+            });
         });
 
-        // Theme Toggle Function
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -476,13 +488,11 @@
             localStorage.setItem('theme', newTheme);
         }
 
-        // Auto Barcode Generator
         function generateAutoBarcode() {
             const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('barcodeInput').value = autoCode;
         }
 
-        // Save Product (No Auto-Print, Clear Form)
         function saveProduct() {
             const barcode = document.getElementById('barcodeInput').value.trim();
             const name = document.getElementById('itemName').value.trim();
@@ -499,7 +509,6 @@
 
             const itemData = { barcode, name, category, gender, size, price, stock };
 
-            // Firebase Database එකට Save කිරීම
             set(ref(db, 'inventory/' + barcode), itemData)
                 .then(() => {
                     alert("Product එක සාර්ථකව Save වුණා!");
@@ -510,7 +519,6 @@
                 });
         }
 
-        // Clear Form
         function clearForm() {
             document.getElementById('barcodeInput').value = '';
             document.getElementById('itemName').value = '';
@@ -519,104 +527,6 @@
             document.getElementById('itemSize').value = '';
         }
 
-        // Populate Product Details for Editing/Viewing
-        window.populateProductDetails = function(barcode) {
+        function populateProductDetails(barcode) {
             const item = globalInventory[barcode];
             if (item) {
-                document.getElementById('barcodeInput').value = item.barcode;
-                document.getElementById('itemName').value = item.name;
-                document.getElementById('productCategory').value = item.category;
-                document.getElementById('targetGender').value = item.gender;
-                document.getElementById('itemSize').value = item.size;
-                document.getElementById('itemPrice').value = item.price;
-                document.getElementById('itemStock').value = item.stock;
-            } else {
-                alert("මෙම බාර්කෝඩ් එකට අදාළ භාණ්ඩයක් නොමැත. නව භාණ්ඩයේ විස්තර ඇතුළත් කරන්න.");
-            }
-        };
-
-        // Delete Product
-        window.deleteProduct = function(barcode) {
-            if (confirm(`ඔබට ස්ථිරවම '${barcode}' බාර්කෝඩ් එක සහිත භාණ්ඩය ඉවත් කිරීමට අවශ්‍යද?`)) {
-                remove(ref(db, 'inventory/' + barcode))
-                    .catch((error) => alert("ඉවත් කිරීමට නොහැකි විය: " + error.message));
-            }
-        };
-
-        // Print Tag (Manual Option)
-        window.printItemBarcode = function(barcode, name, category, gender, size, price) {
-            document.getElementById('lblItemName').textContent = name;
-            document.getElementById('lblCategoryGender').textContent = `${category} | ${gender}`;
-            document.getElementById('lblItemSize').textContent = `Size: ${size}`;
-            document.getElementById('lblItemPrice').textContent = `LKR ${Number(price).toFixed(2)}`;
-
-            JsBarcode("#labelBarcode", barcode, {
-                format: "CODE128",
-                width: 1.5,
-                height: 35,
-                displayValue: true,
-                fontSize: 10
-            });
-
-            document.getElementById('printableLabel').style.display = 'block';
-            window.print();
-            document.getElementById('printableLabel').style.display = 'none';
-        };
-
-        // Realtime Table Render
-        function renderTable(data) {
-            const tableBody = document.getElementById('inventoryTable');
-            tableBody.innerHTML = '';
-
-            const keys = Object.keys(data);
-            if (keys.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-sub);">භාණ්ඩ එකතු කර නොමැත.</td></tr>`;
-                return;
-            }
-
-            keys.forEach((key) => {
-                const item = data[key];
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><code>${item.barcode}</code></td>
-                    <td>${item.name}</td>
-                    <td>${item.category}</td>
-                    <td>${item.gender}</td>
-                    <td>${item.size}</td>
-                    <td>${Number(item.price).toFixed(2)}</td>
-                    <td>${item.stock}</td>
-                    <td style="display: flex; gap: 5px;">
-                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${item.barcode}', '${item.name}', '${item.category}', '${item.gender}', '${item.size}', ${item.price})">Print Tag</button>
-                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteProduct('${item.barcode}')">Delete</button>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
-            });
-        }
-
-        // Firebase Realtime Listener
-        onValue(inventoryRef, (snapshot) => {
-            const data = snapshot.val();
-            globalInventory = data || {};
-            renderTable(globalInventory);
-        });
-
-        // Attach Event Listeners Safely
-        document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
-        document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
-        document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
-
-        // Barcode Input Enter Event
-        const barcodeInput = document.getElementById('barcodeInput');
-        barcodeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const barcode = barcodeInput.value.trim();
-                if (barcode) {
-                    populateProductDetails(barcode);
-                }
-            }
-        });
-    </script>
-</body>
-</html>
