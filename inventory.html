@@ -443,7 +443,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔥 ඔබගේ Firebase Config එක මෙතනට යොදන්න
+        // 🔥 ඔබගේ නිවැරදි Firebase Config එක මෙතනට යොදන්න
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -460,31 +460,46 @@
 
         let globalInventory = {};
 
-        // Theme Initialization & Setup
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
+        // Helper Functions
+        function clearForm() {
+            document.getElementById('barcodeInput').value = '';
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemStock').value = '';
+            document.getElementById('itemSize').value = '';
+        }
 
-            // Event Listeners set කිරීම
-            document.getElementById('themeBtn').addEventListener('click', toggleTheme);
-            document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
-            document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
-        });
-
-        // Realtime Updates
-        onValue(inventoryRef, (snapshot) => {
-            const data = snapshot.val();
-            globalInventory = data || {};
-            renderTable(globalInventory);
-        });
-
-        // Auto Barcode Generator
         function generateAutoBarcode() {
             const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('barcodeInput').value = autoCode;
         }
 
-        // Save Function
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function printItemBarcode(barcode, name, category, gender, size, price) {
+            document.getElementById('lblItemName').textContent = name;
+            document.getElementById('lblCategoryGender').textContent = `${category} | ${gender}`;
+            document.getElementById('lblItemSize').textContent = `Size: ${size}`;
+            document.getElementById('lblItemPrice').textContent = `LKR ${Number(price).toFixed(2)}`;
+
+            JsBarcode("#labelBarcode", barcode, {
+                format: "CODE128",
+                width: 1.5,
+                height: 35,
+                displayValue: true,
+                fontSize: 10
+            });
+
+            document.getElementById('printableLabel').style.display = 'block';
+            window.print();
+            document.getElementById('printableLabel').style.display = 'none';
+        }
+
         function saveProduct() {
             const barcode = document.getElementById('barcodeInput').value.trim();
             const name = document.getElementById('itemName').value.trim();
@@ -511,35 +526,6 @@
                 });
         }
 
-        // Theme Toggle
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        }
-
-        // Print Tag Function
-        function printItemBarcode(barcode, name, category, gender, size, price) {
-            document.getElementById('lblItemName').textContent = name;
-            document.getElementById('lblCategoryGender').textContent = `${category} | ${gender}`;
-            document.getElementById('lblItemSize').textContent = `Size: ${size}`;
-            document.getElementById('lblItemPrice').textContent = `LKR ${Number(price).toFixed(2)}`;
-
-            JsBarcode("#labelBarcode", barcode, {
-                format: "CODE128",
-                width: 1.5,
-                height: 35,
-                displayValue: true,
-                fontSize: 10
-            });
-
-            document.getElementById('printableLabel').style.display = 'block';
-            window.print();
-            document.getElementById('printableLabel').style.display = 'none';
-        }
-
-        // Delete Function
         function deleteProduct(barcode) {
             if (confirm(`ඔබට निश्चितවම '${barcode}' බාර්කෝඩ් එක සහිත භාණ්ඩය ඉවත් කිරීමට අවශ්‍යද?`)) {
                 remove(ref(db, 'inventory/' + barcode))
@@ -577,7 +563,6 @@
                     </td>
                 `;
 
-                // Secure Dynamic Event Listeners
                 tr.querySelector('.btn-print').addEventListener('click', () => {
                     printItemBarcode(item.barcode, item.name, item.category, item.gender, item.size, item.price);
                 });
@@ -590,13 +575,21 @@
             });
         }
 
-        function clearForm() {
-            document.getElementById('barcodeInput').value = '';
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemPrice').value = '';
-            document.getElementById('itemStock').value = '';
-            document.getElementById('itemSize').value = '';
-        }
+        // Setup Event Listeners & Realtime Connection
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+            document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
+            document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
+        });
+
+        onValue(inventoryRef, (snapshot) => {
+            const data = snapshot.val();
+            globalInventory = data || {};
+            renderTable(globalInventory);
+        });
     </script>
 </body>
 </html>
