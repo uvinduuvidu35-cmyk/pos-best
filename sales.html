@@ -428,6 +428,9 @@
                 cart = [];
                 total = 0;
                 updateCartUI();
+
+                // 🔄 receipt.html පිටුවට යොමු කිරීම
+                window.location.href = 'receipt.html';
             } catch (error) {
                 console.error("Error saving sale to Firebase:", error);
                 alert("Failed to save transaction: " + error.message);
