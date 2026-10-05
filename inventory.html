@@ -344,10 +344,10 @@
         <div class="top-header">
             <h1>Inventory Management</h1>
             <div class="user-profile">
-                <button class="theme-btn" onclick="window.toggleTheme()">🌓 Theme</button>
+                <button class="theme-btn" id="themeBtn">🌓 Theme</button>
                 <div class="welcome-badge">
-                    <div class="avatar">M</div>
-                    <span>Welcome, M4K</span>
+                    <div class="avatar">G</div>
+                    <span>Welcome, DCK</span>
                 </div>
             </div>
         </div>
@@ -360,7 +360,7 @@
                     <label>Barcode / Item Code</label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="barcodeInput" class="form-control" placeholder="Scan or Type Barcode..." autofocus>
-                        <button class="btn btn-secondary" onclick="window.generateAutoBarcode()" type="button">Auto</button>
+                        <button class="btn btn-secondary" id="autoBarcodeBtn" type="button">Auto</button>
                     </div>
                 </div>
 
@@ -403,7 +403,7 @@
                 </div>
 
                 <div class="btn-group">
-                    <button class="btn btn-primary" onclick="window.saveProduct()" type="button">Save & Print Tag</button>
+                    <button class="btn btn-primary" id="saveProductBtn" type="button">Save & Print Tag</button>
                 </div>
             </div>
 
@@ -443,14 +443,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔥 Firebase Config එක මෙතනට දාන්න
+        // 🔥 ඔබගේ Firebase Config එක මෙතනට යොදන්න
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
             projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
             appId: "YOUR_APP_ID"
         };
 
@@ -460,9 +460,15 @@
 
         let globalInventory = {};
 
-        window.addEventListener('DOMContentLoaded', () => {
+        // Theme Initialization & Setup
+        document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
+
+            // Event Listeners set කිරීම
+            document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+            document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
+            document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
         });
 
         // Realtime Updates
@@ -473,13 +479,13 @@
         });
 
         // Auto Barcode Generator
-        window.generateAutoBarcode = function() {
+        function generateAutoBarcode() {
             const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('barcodeInput').value = autoCode;
-        };
+        }
 
         // Save Function
-        window.saveProduct = function() {
+        function saveProduct() {
             const barcode = document.getElementById('barcodeInput').value.trim();
             const name = document.getElementById('itemName').value.trim();
             const category = document.getElementById('productCategory').value;
@@ -497,32 +503,24 @@
 
             set(ref(db, 'inventory/' + barcode), itemData)
                 .then(() => {
-                    window.printItemBarcode(barcode, name, category, gender, size, price);
+                    printItemBarcode(barcode, name, category, gender, size, price);
                     clearForm();
                 })
                 .catch((error) => {
                     alert("දත්ත සුරැකීමට අපොහොසත් විය: " + error.message);
                 });
-        };
-
-        // Delete Function
-        window.deleteProduct = function(barcode) {
-            if (confirm(`ඔබට निश्चितවම '${barcode}' බාර්කෝඩ් එක සහිත භාණ්ඩය ඉවත් කිරීමට අවශ්‍යද?`)) {
-                remove(ref(db, 'inventory/' + barcode))
-                    .catch((error) => alert("ඉවත් කිරීමට නොහැකි විය: " + error.message));
-            }
-        };
+        }
 
         // Theme Toggle
-        window.toggleTheme = function() {
+        function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-        };
+        }
 
         // Print Tag Function
-        window.printItemBarcode = function(barcode, name, category, gender, size, price) {
+        function printItemBarcode(barcode, name, category, gender, size, price) {
             document.getElementById('lblItemName').textContent = name;
             document.getElementById('lblCategoryGender').textContent = `${category} | ${gender}`;
             document.getElementById('lblItemSize').textContent = `Size: ${size}`;
@@ -539,7 +537,15 @@
             document.getElementById('printableLabel').style.display = 'block';
             window.print();
             document.getElementById('printableLabel').style.display = 'none';
-        };
+        }
+
+        // Delete Function
+        function deleteProduct(barcode) {
+            if (confirm(`ඔබට निश्चितවම '${barcode}' බාර්කෝඩ් එක සහිත භාණ්ඩය ඉවත් කිරීමට අවශ්‍යද?`)) {
+                remove(ref(db, 'inventory/' + barcode))
+                    .catch((error) => alert("ඉවත් කිරීමට නොහැකි විය: " + error.message));
+            }
+        }
 
         function renderTable(data) {
             const tableBody = document.getElementById('inventoryTable');
@@ -554,6 +560,7 @@
             keys.forEach((key) => {
                 const item = data[key];
                 const tr = document.createElement('tr');
+                
                 tr.innerHTML = `
                     <td><code>${item.barcode}</code></td>
                     <td>${item.name}</td>
@@ -562,11 +569,23 @@
                     <td>${item.size}</td>
                     <td>${Number(item.price).toFixed(2)}</td>
                     <td>${item.stock}</td>
-                    <td style="display: flex; gap: 5px;">
-                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="window.printItemBarcode('${item.barcode}', '${item.name}', '${item.category}', '${item.gender}', '${item.size}', ${item.price})">Print Tag</button>
-                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="window.deleteProduct('${item.barcode}')">Delete</button>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn btn-secondary btn-print" style="padding: 4px 8px; font-size: 11px;">Print Tag</button>
+                            <button class="btn btn-danger btn-delete" style="padding: 4px 8px; font-size: 11px;">Delete</button>
+                        </div>
                     </td>
                 `;
+
+                // Secure Dynamic Event Listeners
+                tr.querySelector('.btn-print').addEventListener('click', () => {
+                    printItemBarcode(item.barcode, item.name, item.category, item.gender, item.size, item.price);
+                });
+
+                tr.querySelector('.btn-delete').addEventListener('click', () => {
+                    deleteProduct(item.barcode);
+                });
+
                 tableBody.appendChild(tr);
             });
         }
