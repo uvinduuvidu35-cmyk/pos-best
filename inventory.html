@@ -438,20 +438,21 @@
         <svg id="labelBarcode"></svg>
     </div>
 
-    <!-- Firebase Script -->
+    <!-- Firebase SDK v10 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔥 ඔයාගේ Firebase Console එකෙන් ලැබෙන Config විස්තර මෙතනට ඇතුළත් කරන්න
+        // 🔥 ඔබ ලබා දුන් Firebase Config දත්ත මෙතැනට ඇතුළත් කර ඇත
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
+            authDomain: "pos-78811.firebaseapp.com",
+            databaseURL: "https://pos-78811-default-rtdb.firebaseio.com",
+            projectId: "pos-78811",
+            storageBucket: "pos-78811.firebasestorage.app",
+            messagingSenderId: "408721172867",
+            appId: "1:408721172867:web:301073f3f8b6deeaaa2eb6",
+            measurementId: "G-2S3D8JEGQH"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -460,7 +461,6 @@
 
         let globalInventory = {};
 
-        // DOM Load වූ පසු Event Listeners සම්බන්ධ කිරීම
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -530,3 +530,82 @@
         function populateProductDetails(barcode) {
             const item = globalInventory[barcode];
             if (item) {
+                document.getElementById('barcodeInput').value = item.barcode;
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('productCategory').value = item.category;
+                document.getElementById('targetGender').value = item.gender;
+                document.getElementById('itemSize').value = item.size;
+                document.getElementById('itemPrice').value = item.price;
+                document.getElementById('itemStock').value = item.stock;
+            }
+        }
+
+        window.deleteProduct = function(barcode) {
+            if (confirm(`ඔබට ස්ථිරවම '${barcode}' බාර්කෝඩ් එක සහිත භාණ්ඩය ඉවත් කිරීමට අවශ්‍යද?`)) {
+                remove(ref(db, 'inventory/' + barcode))
+                    .catch((error) => alert("ඉවත් කිරීමට නොහැකි විය: " + error.message));
+            }
+        };
+
+        window.printItemBarcode = function(barcode, name, category, gender, size, price) {
+            document.getElementById('lblItemName').textContent = name;
+            document.getElementById('lblCategoryGender').textContent = `${category} | ${gender}`;
+            document.getElementById('lblItemSize').textContent = `Size: ${size}`;
+            document.getElementById('lblItemPrice').textContent = `LKR ${Number(price).toFixed(2)}`;
+
+            JsBarcode("#labelBarcode", barcode, {
+                format: "CODE128",
+                width: 1.5,
+                height: 35,
+                displayValue: true,
+                fontSize: 10
+            });
+
+            document.getElementById('printableLabel').style.display = 'block';
+            window.print();
+            document.getElementById('printableLabel').style.display = 'none';
+        };
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('inventoryTable');
+            tableBody.innerHTML = '';
+
+            if (!data) {
+                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-sub);">භාණ්ඩ එකතු කර නොමැත.</td></tr>`;
+                return;
+            }
+
+            const keys = Object.keys(data);
+            if (keys.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-sub);">භාණ්ඩ එකතු කර නොමැත.</td></tr>`;
+                return;
+            }
+
+            keys.forEach((key) => {
+                const item = data[key];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${item.barcode}</code></td>
+                    <td>${item.name}</td>
+                    <td>${item.category}</td>
+                    <td>${item.gender}</td>
+                    <td>${item.size}</td>
+                    <td>${Number(item.price).toFixed(2)}</td>
+                    <td>${item.stock}</td>
+                    <td style="display: flex; gap: 5px;">
+                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${item.barcode}', '${item.name}', '${item.category}', '${item.gender}', '${item.size}', ${item.price})">Print Tag</button>
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteProduct('${item.barcode}')">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        onValue(inventoryRef, (snapshot) => {
+            const data = snapshot.val();
+            globalInventory = data || {};
+            renderTable(globalInventory);
+        });
+    </script>
+</body>
+</html>
