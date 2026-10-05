@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCK Footwear - Thermal Receipt</title>
+    <!-- JsBarcode Library for Auto Barcode Generation -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0d14;
+            --card-bg: #ffffff;
+            --text-main: #000000;
+            --text-sub: #444444;
+            --primary-blue: #0088ff;
+            --glow-color: rgba(0, 136, 255, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            padding: 20px;
+        }
+
+        .receipt-card {
+            background: var(--card-bg);
+            padding: 25px 20px;
+            width: 320px; /* Standard Thermal Paper Width */
+            color: #000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .receipt-title {
+            font-size: 22px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .receipt-subtitle {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 2px;
+        }
+
+        .divider {
+            border-top: 1px dashed #000;
+            margin: 12px 0;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .items-list {
+            list-style: none;
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .summary-box {
+            margin-top: 10px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .summary-row.total {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 6px;
+        }
+
+        /* Screen Only Elements (Input & Buttons) */
+        .screen-controls {
+            width: 320px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .payment-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 10px;
+            text-align: center;
+            font-family: sans-serif;
+        }
+
+        .change-display {
+            font-size: 15px;
+            font-weight: bold;
+            color: #0088ff;
+            margin-bottom: 15px;
+            font-family: sans-serif;
+        }
+
+        .print-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #0088ff, #00c6ff);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: sans-serif;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 15px;
+            color: #a3a3c2;
+            text-decoration: none;
+            font-size: 13px;
+            font-family: sans-serif;
+        }
+
+        .thank-you-msg {
+            margin-top: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .barcode-container {
+            margin-top: 10px;
+        }
+
+        /* Print Settings */
+        @media print {
+            body {
+                background-color: #fff;
+                padding: 0;
+            }
+            .screen-controls {
+                display: none;
+            }
+            .receipt-card {
+                box-shadow: none;
+                width: 100%;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="receipt-card">
+        <h1 class="receipt-title">DCK FOOTWEAR</h1>
+        <p class="receipt-subtitle">Angunakolapelessa</p>
+        <p class="receipt-subtitle">Tel: 07X-XXXXXXX</p>
+        
+        <div class="divider"></div>
+
+        <div class="info-row">
+            <span>Date: <span id="receiptDate"></span></span>
+            <span>Time: <span id="receiptTime"></span></span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="item-row" style="font-weight: bold;">
+            <span>Item</span>
+            <span>Price</span>
+        </div>
+        
+        <ul class="items-list" id="receiptItems"></ul>
+
+        <div class="divider"></div>
+
+        <div class="summary-box">
+            <div class="summary-row">
+                <span>Sub-total</span>
+                <span id="subTotal">LKR 0.00</span>
+            </div>
+            <div class="summary-row total">
+                <span>TOTAL</span>
+                <span id="receiptTotal">LKR 0.00</span>
+            </div>
+            <div class="summary-row" style="margin-top: 6px;">
+                <span>Tendered:</span>
+                <span id="dispTendered">LKR 0.00</span>
+            </div>
+            <div class="summary-row">
+                <span>Change:</span>
+                <span id="dispChange">LKR 0.00</span>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="thank-you-msg">
+            <p>Thank You! Come Again.</p>
+            <p>ස්තූතියි! නැවත පැමිණෙන්න.</p>
+        </div>
+
+        <!-- Auto-generated Barcode -->
+        <div class="barcode-container">
+            <svg id="barcode"></svg>
+        </div>
+    </div>
+
+    <!-- Screen UI Controls -->
+    <div class="screen-controls">
+        <input type="number" id="tenderedAmount" class="payment-input" placeholder="Enter Cash Tendered" autofocus>
+        <div class="change-display" id="changeDisplay">Change: LKR 0.00</div>
+        <button id="printBtn" class="print-btn" onclick="completeTransaction()">Complete & Print</button>
+        <a href="sales.html" class="back-link">Cancel Sale</a>
+    </div>
+
+    <script>
+        let total = 0;
+
+        window.onload = () => {
+            // Set Date and Time
+            const now = new Date();
+            document.getElementById('receiptDate').textContent = now.toLocaleDateString();
+            document.getElementById('receiptTime').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            // Load items from LocalStorage
+            const items = JSON.parse(localStorage.getItem('receiptItems')) || [
+                { name: 'Shoe A', price: 2500.00 }
+            ];
+            total = parseFloat(localStorage.getItem('receiptTotal')) || 2500.00;
+
+            const receiptItemsList = document.getElementById('receiptItems');
+            receiptItemsList.innerHTML = '';
+
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'item-row';
+                li.innerHTML = `<span>${item.name}</span><span>${item.price.toFixed(2)}</span>`;
+                receiptItemsList.appendChild(li);
+            });
+
+            document.getElementById('subTotal').textContent = `LKR ${total.toFixed(2)}`;
+            document.getElementById('receiptTotal').textContent = `LKR ${total.toFixed(2)}`;
+
+            // Generate Barcode
+            const transactionId = "DCK" + Math.floor(100000 + Math.random() * 900000);
+            JsBarcode("#barcode", transactionId, {
+                format: "CODE128",
+                width: 1.5,
+                height: 40,
+                displayValue: true,
+                fontSize: 10
+            });
+        }
+
+        const tenderedAmount = document.getElementById('tenderedAmount');
+        const changeDisplay = document.getElementById('changeDisplay');
+
+        tenderedAmount.addEventListener('input', calculateChange);
+
+        function calculateChange() {
+            const tendered = parseFloat(tenderedAmount.value) || 0;
+            const change = tendered - total;
+
+            if (tendered >= total) {
+                changeDisplay.textContent = `Change: LKR ${change.toFixed(2)}`;
+                changeDisplay.style.color = "#0088ff";
+                document.getElementById('dispTendered').textContent = `LKR ${tendered.toFixed(2)}`;
+                document.getElementById('dispChange').textContent = `LKR ${change.toFixed(2)}`;
+            } else {
+                changeDisplay.textContent = `Insufficient Cash`;
+                changeDisplay.style.color = "#ff4444";
+                document.getElementById('dispTendered').textContent = `LKR 0.00`;
+                document.getElementById('dispChange').textContent = `LKR 0.00`;
+            }
+        }
+
+        function completeTransaction() {
+            const tendered = parseFloat(tenderedAmount.value) || 0;
+            if (tendered < total) {
+                alert("Please enter a valid cash amount!");
+                return;
+            }
+
+            // Drawer open simulation
+            alert("Opening cash drawer...");
+
+            // Print Receipt
+            window.print();
+        }
+    </script>
+</body>
+</html>
