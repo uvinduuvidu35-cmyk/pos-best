@@ -248,15 +248,15 @@
         <section class="stats-grid">
             <div class="stat-card">
                 <span class="stat-label">Total Sales (Today)</span>
-                <span class="stat-value">LKR 45,200</span>
+                <span class="stat-value" id="totalSales">LKR 0</span>
             </div>
             <div class="stat-card">
                 <span class="stat-label">Total Orders</span>
-                <span class="stat-value">28</span>
+                <span class="stat-value" id="totalOrders">0</span>
             </div>
             <div class="stat-card">
                 <span class="stat-label">Items Low in Stock</span>
-                <span class="stat-value">5</span>
+                <span class="stat-value" id="lowStockItems">0</span>
             </div>
         </section>
 
@@ -277,7 +277,29 @@
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
         }
+    </script>
 
+    <!-- Firebase Realtime Database Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
+            authDomain: "pos-78811.firebaseapp.com",
+            databaseURL: "https://pos-78811-default-rtdb.firebaseio.com",
+            projectId: "pos-78811",
+            storageBucket: "pos-78811.firebasestorage.app",
+            messagingSenderId: "408721172867",
+            appId: "1:408721172867:web:301073f3f8b6deeaaa2eb6",
+            measurementId: "G-2S3D8JEGQH"
+        };
+
+        // Initialize Firebase & Database
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Chart Initialization
         const ctx = document.getElementById('salesChart').getContext('2d');
         const salesChart = new Chart(ctx, {
             type: 'line',
@@ -285,7 +307,7 @@
                 labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                 datasets: [{
                     label: 'Weekly Sales (LKR)',
-                    data: [3000, 6000, 11000, 14000, 19000, 15000, 10000],
+                    data: [0, 0, 0, 0, 0, 0, 0],
                     borderColor: '#0088ff',
                     backgroundColor: 'rgba(0, 136, 255, 0.1)',
                     borderWidth: 3,
@@ -295,26 +317,40 @@
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
                     x: {
                         grid: { color: 'rgba(255, 255, 255, 0.05)' },
                         ticks: { color: '#94a3b8' }
                     },
                     y: {
-                        min: 2000,
-                        max: 20000,
-                        ticks: {
-                            stepSize: 2000,
-                            color: '#94a3b8'
-                        },
+                        beginAtZero: true,
+                        ticks: { color: '#94a3b8' },
                         grid: { color: 'rgba(255, 255, 255, 0.05)' }
                     }
                 }
+            }
+        });
+
+        // 1. Listen for Realtime Dashboard Stats
+        const statsRef = ref(database, 'dashboard/stats');
+        onValue(statsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                document.getElementById('totalSales').innerText = `LKR ${(data.totalSales || 0).toLocaleString()}`;
+                document.getElementById('totalOrders').innerText = data.totalOrders || 0;
+                document.getElementById('lowStockItems').innerText = data.lowStockItems || 0;
+            }
+        });
+
+        // 2. Listen for Realtime Weekly Sales Chart Data
+        const chartRef = ref(database, 'dashboard/weeklySales');
+        onValue(chartRef, (snapshot) => {
+            const chartData = snapshot.val();
+            if (chartData) {
+                // expecting array like [3000, 6000, 11000, ...] or object
+                salesChart.data.datasets[0].data = Object.values(chartData);
+                salesChart.update();
             }
         });
     </script>
