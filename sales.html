@@ -330,27 +330,9 @@
                 <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan barcode here to add item..." autofocus>
                 
                 <h2 class="section-title">Products</h2>
-                <div class="product-grid">
-                    <div class="product-item" onclick="addToCart('Shoe A', 2500)">
-                        <div class="product-name">Shoe A</div>
-                        <div class="product-price">LKR 2,500</div>
-                    </div>
-                    <div class="product-item" onclick="addToCart('Shoe B', 4000)">
-                        <div class="product-name">Shoe B</div>
-                        <div class="product-price">LKR 4,000</div>
-                    </div>
-                    <div class="product-item" onclick="addToCart('Shoe C', 3500)">
-                        <div class="product-name">Shoe C</div>
-                        <div class="product-price">LKR 3,500</div>
-                    </div>
-                    <div class="product-item" onclick="addToCart('Shoe D', 5000)">
-                        <div class="product-name">Shoe D</div>
-                        <div class="product-price">LKR 5,000</div>
-                    </div>
-                    <div class="product-item" onclick="addToCart('Slipper A', 1200)">
-                        <div class="product-name">Slipper A</div>
-                        <div class="product-price">LKR 1,200</div>
-                    </div>
+                <div class="product-grid" id="productGrid">
+                    <!-- Products will load dynamically from Firebase Realtime Database -->
+                    <p style="color: var(--text-sub);">Loading products...</p>
                 </div>
             </div>
 
@@ -367,6 +349,118 @@
         </section>
     </main>
 
+    <!-- Firebase SDK Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // 🔥 Replace this with your actual Firebase Project Configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        let localProducts = {}; // Stores fetched products locally for barcode mapping
+
+        // 🔄 Realtime Listener: Fetch Products from Firebase Database ('products' path)
+        const productsRef = ref(database, 'products');
+        onValue(productsRef, (snapshot) => {
+            const productGrid = document.getElementById('productGrid');
+            productGrid.innerHTML = ''; // Clear existing content
+
+            const data = snapshot.val();
+            if (data) {
+                localProducts = data; // Keep local copy for barcode scanning
+                Object.keys(data).forEach(key => {
+                    const product = data[key];
+                    
+                    const productDiv = document.createElement('div');
+                    productDiv.className = 'product-item';
+                    productDiv.onclick = () => window.addToCart(product.name, product.price);
+                    
+                    productDiv.innerHTML = `
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-price">LKR ${product.price.toLocaleString()}</div>
+                    `;
+                    productGrid.appendChild(productDiv);
+                });
+            } else {
+                productGrid.innerHTML = '<p style="color: var(--text-sub);">No products found in database.</p>';
+            }
+        });
+
+        // 🛒 Function to Process Checkout & Save Order to Firebase ('sales' path)
+        window.processCheckout = async function() {
+            if (cart.length === 0) {
+                alert("Cart is empty!");
+                return;
+            }
+
+            try {
+                // Realtime Database එකට Sale Record එක Save කිරීම
+                const salesRef = ref(database, 'sales');
+                const newSaleRef = push(salesRef);
+                await set(newSaleRef, {
+                    items: cart,
+                    totalAmount: total,
+                    timestamp: new Date().toISOString(),
+                    date: new Date().toLocaleDateString()
+                });
+
+                // LocalStorage update for printing/displaying receipt
+                localStorage.setItem('receiptItems', JSON.stringify(cart));
+                localStorage.setItem('receiptTotal', total);
+
+                alert("Transaction successful & saved to Firebase!");
+                window.location.href = "receipt.html";
+            } catch (error) {
+                console.error("Error saving sale to Firebase:", error);
+                alert("Failed to save transaction: " + error.message);
+            }
+        };
+
+        // 🔍 Search product by Barcode in Realtime Data
+        window.handleBarcode = function(barcode) {
+            let found = false;
+
+            // Search in loaded firebase products
+            for (let key in localProducts) {
+                if (localProducts[key].barcode && localProducts[key].barcode.toString() === barcode) {
+                    const product = localProducts[key];
+                    window.addToCart(product.name, product.price);
+                    found = true;
+                    break;
+                }
+            }
+
+            // Fallback for static default barcodes if needed
+            if (!found) {
+                const defaultMap = {
+                    "123456789": { name: "Shoe A", price: 2500 },
+                    "987654321": { name: "Shoe B", price: 4000 },
+                    "456123789": { name: "Shoe C", price: 3500 }
+                };
+
+                if (defaultMap[barcode]) {
+                    const product = defaultMap[barcode];
+                    window.addToCart(product.name, product.price);
+                } else {
+                    alert("Product not found for barcode: " + barcode);
+                }
+            }
+        };
+    </script>
+
+    <!-- UI Logic Script -->
     <script>
         window.onload = () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -387,25 +481,12 @@
         barcodeInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const barcode = barcodeInput.value.trim();
-                handleBarcode(barcode);
+                if (barcode && window.handleBarcode) {
+                    window.handleBarcode(barcode);
+                }
                 barcodeInput.value = '';
             }
         });
-
-        function handleBarcode(barcode) {
-            const productMap = {
-                "123456789": { name: "Shoe A", price: 2500 },
-                "987654321": { name: "Shoe B", price: 4000 },
-                "456123789": { name: "Shoe C", price: 3500 }
-            };
-
-            if (productMap[barcode]) {
-                const product = productMap[barcode];
-                addToCart(product.name, product.price);
-            } else {
-                alert("Product not found for barcode: " + barcode);
-            }
-        }
 
         function addToCart(name, price) {
             cart.push({ name, price });
@@ -421,23 +502,11 @@
             cart.forEach(item => {
                 const li = document.createElement('li');
                 li.className = 'cart-item';
-                li.innerHTML = `<span>${item.name}</span> <span>LKR ${item.price}</span>`;
+                li.innerHTML = `<span>${item.name}</span> <span>LKR ${item.price.toLocaleString()}</span>`;
                 cartItemsList.appendChild(li);
             });
 
-            cartTotal.textContent = `Total: LKR ${total}`;
-        }
-
-        function processCheckout() {
-            if (cart.length === 0) {
-                alert("Cart is empty!");
-                return;
-            }
-
-            localStorage.setItem('receiptItems', JSON.stringify(cart));
-            localStorage.setItem('receiptTotal', total);
-
-            window.location.href = "receipt.html";
+            cartTotal.textContent = `Total: LKR ${total.toLocaleString()}`;
         }
     </script>
 </body>
