@@ -4,305 +4,685 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DCK Footwear - Inventory</title>
-    <!-- JsBarcode Library for rendering barcodes -->
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <!-- JsBarcode Library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
-            margin: 20px;
+        :root {
+            --bg-color: #0b0d14;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+            --primary-blue: #0088ff;
+            --gradient-start: #0284c7;
+            --gradient-end: #0369a1;
+            --glow-color: rgba(0, 136, 255, 0.3);
+            --sidebar-bg: #0f172a;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --option-bg: #1e293b;
+            --option-text: #ffffff;
+            --danger-color: #ef4444;
         }
 
-        h2 {
-            color: #00bcd4;
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --primary-blue: #0284c7;
+            --gradient-start: #0284c7;
+            --gradient-end: #0369a1;
+            --glow-color: rgba(2, 132, 199, 0.15);
+            --sidebar-bg: #ffffff;
+            --input-bg: #f1f5f9;
+            --option-bg: #ffffff;
+            --option-text: #0f172a;
+            --danger-color: #dc2626;
         }
 
-        .form-container {
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #333;
-            background-color: #2b2b2b;
-            color: #fff;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
         }
 
-        .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        body {
+            background-color: var(--bg-color);
+            min-height: 100vh;
+            display: flex;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            padding: 25px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .sidebar-brand h2 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .nav-links { list-style: none; }
+
+        .nav-links li a {
+            display: block;
+            padding: 12px 16px;
+            color: var(--text-sub);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .nav-links li a:hover, .nav-links li a.active {
+            background: rgba(0, 136, 255, 0.15);
+            color: var(--primary-blue);
+            border: 1px solid var(--primary-blue);
+        }
+
+        /* Main Area Styles */
+        .main-content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .top-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .welcome-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
             font-weight: bold;
         }
 
-        .btn-primary { background-color: #00bcd4; color: #121212; }
-        .btn-warning { background-color: #ff9800; color: #121212; }
-        .btn-danger { background-color: #f44336; color: #fff; }
-        .btn-secondary { background-color: #757575; color: #fff; }
+        .theme-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .form-control, .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .form-select option {
+            background-color: var(--option-bg);
+            color: var(--option-text);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 8px var(--glow-color);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: #ffffff;
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        .table-container { overflow-x: auto; }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: #1e1e1e;
-            margin-top: 20px;
+            text-align: left;
         }
 
         th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #333;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 13px;
         }
 
         th {
-            background-color: #252525;
-            color: #00bcd4;
+            color: var(--text-sub);
+            font-size: 11px;
+            text-transform: uppercase;
         }
 
-        /* PRINT STYLING */
-        #printArea {
+        code {
+            background: rgba(0, 136, 255, 0.1);
+            color: var(--primary-blue);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        /* Print Media Styles */
+        #printableArea, #printInventoryReport {
             display: none;
+            background: #fff;
+            color: #000;
+            padding: 15px;
+            font-family: Arial, sans-serif;
+        }
+
+        .print-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag-card {
+            background: #fff;
+            color: #000;
+            border: 1px dashed #ccc;
+            padding: 10px;
+            text-align: center;
+            width: 220px;
+            box-sizing: border-box;
+            page-break-inside: avoid;
         }
 
         @media print {
-            body * {
-                visibility: hidden;
-            }
-
-            #printArea, #printArea * {
+            body * { visibility: hidden; }
+            #printableArea, #printableArea *, #printInventoryReport, #printInventoryReport * {
                 visibility: visible;
             }
-
-            #printArea {
-                display: flex !important;
-                flex-wrap: wrap;
-                gap: 10px;
+            #printableArea, #printInventoryReport {
+                display: block !important;
                 position: absolute;
                 left: 0;
                 top: 0;
                 width: 100%;
-                background-color: #fff;
-                color: #000;
-                padding: 10px;
-            }
-
-            .tag-card {
-                border: 1px dashed #000;
-                padding: 10px;
-                width: 180px;
-                text-align: center;
-                box-sizing: border-box;
-                page-break-inside: avoid;
-            }
-
-            .tag-title {
-                font-size: 12px;
-                font-weight: bold;
-                margin-bottom: 2px;
-            }
-
-            .tag-details {
-                font-size: 10px;
-                margin-bottom: 5px;
-            }
-
-            .tag-price {
-                font-size: 11px;
-                font-weight: bold;
-                margin-top: 3px;
-            }
-
-            svg {
-                max-width: 100%;
-                height: 40px;
             }
         }
     </style>
 </head>
 <body>
+    <aside class="sidebar">
+        <div>
+            <div class="sidebar-brand">
+                <h2>DCK Footwear</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="sales.html">Sales & Billing</a></li>
+                <li><a href="inventory.html" class="active">Inventory</a></li>
+                <li><a href="Customer.html">Customers</a></li>
+                <li><a href="chart.html">Charts</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html">Sign Out</a></li>
+        </ul>
+    </aside>
 
-    <h2>Stock Inventory</h2>
+    <main class="main-content">
+        <div class="top-header">
+            <h1>Inventory Management</h1>
+            <div class="user-profile">
+                <button class="theme-btn" id="themeToggleBtn">🌓 Theme</button>
+                <div class="welcome-badge">
+                    <div class="avatar">M</div>
+                    <span>Welcome, M4K</span>
+                </div>
+            </div>
+        </div>
 
-    <!-- Inventory Form -->
-    <div class="form-container">
-        <form id="inventoryForm">
-            <input type="hidden" id="itemKey">
-            <div class="form-group">
-                <label>Barcode</label>
-                <input type="text" id="barcode" required>
+        <div class="container">
+            <!-- Add / Update Form -->
+            <div class="card">
+                <h2 class="section-title">Add / Update Product</h2>
+                <div class="form-group">
+                    <label for="barcodeInput">Barcode / Item Code</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="barcodeInput" class="form-control" placeholder="Scan or Type Barcode..." autofocus>
+                        <button class="btn btn-secondary" id="autoBarcodeBtn" type="button">Auto</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="itemName">Item Name</label>
+                    <input type="text" id="itemName" class="form-control" placeholder="e.g. Formal Shoe">
+                </div>
+                <div class="form-group">
+                    <label for="productCategory">Product Category</label>
+                    <select id="productCategory" class="form-select">
+                        <option value="Shoe">Shoe</option>
+                        <option value="Slipper">Slipper</option>
+                        <option value="Umbrella">Umbrella</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="targetGender">Target Gender</label>
+                    <select id="targetGender" class="form-select">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Unisex">Unisex</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemColor">Color</label>
+                    <input type="text" id="itemColor" class="form-control" placeholder="e.g. Black / Brown / Red">
+                </div>
+                <div class="form-group">
+                    <label for="itemSize">Size</label>
+                    <input type="text" id="itemSize" class="form-control" placeholder="e.g. 7 | 8 | 9">
+                </div>
+                <div class="form-group">
+                    <label for="itemPrice">Price (LKR)</label>
+                    <input type="number" id="itemPrice" class="form-control" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="itemStock">Stock Quantity (Pieces)</label>
+                    <input type="number" id="itemStock" class="form-control" placeholder="0" min="0">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="saveProductBtn" type="button">Save Product</button>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Item Name</label>
-                <input type="text" id="itemName" required>
+
+            <!-- Inventory Table -->
+            <div class="card table-container">
+                <div class="section-title">
+                    <span>Stock Inventory</span>
+                    <button class="btn btn-secondary" onclick="printStockReport()">🖨️ Print Stock</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Gender</th>
+                            <th>Color</th>
+                            <th>Size</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTable"></tbody>
+                </table>
             </div>
-            <div class="form-group">
-                <label>Category</label>
-                <input type="text" id="category">
-            </div>
-            <div class="form-group">
-                <label>Gender</label>
-                <select id="gender">
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Unisex">Unisex</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Color</label>
-                <input type="text" id="color">
-            </div>
-            <div class="form-group">
-                <label>Size</label>
-                <input type="text" id="size">
-            </div>
-            <div class="form-group">
-                <label>Price (LKR)</label>
-                <input type="number" id="price" required>
-            </div>
-            <div class="form-group">
-                <label>Stock Qty</label>
-                <input type="number" id="stock" required>
-            </div>
-            
-            <button type="button" class="btn btn-primary" onclick="saveItem()">Save Item</button>
-            <button type="button" class="btn btn-secondary" onclick="resetForm()">Clear</button>
-        </form>
+        </div>
+    </main>
+
+    <!-- Tag Printing Area -->
+    <div id="printableArea">
+        <div id="printGrid" class="print-grid"></div>
     </div>
 
-    <!-- Inventory Table -->
-    <table>
-        <thead>
-            <tr>
-                <th>Barcode</th>
-                <th>Item Name</th>
-                <th>Category</th>
-                <th>Gender</th>
-                <th>Color</th>
-                <th>Size</th>
-                <th>Price (LKR)</th>
-                <th>Stock</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="inventoryTableBody">
-            <!-- Dynamic Content -->
-        </tbody>
-    </table>
+    <!-- Inventory Report Printing Area -->
+    <div id="printInventoryReport">
+        <h2 style="text-align: center; margin-bottom: 5px;">DCK FOOTWEAR - STOCK INVENTORY REPORT</h2>
+        <hr style="margin-bottom: 15px;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Barcode</th>
+                    <th>Item Name</th>
+                    <th>Category</th>
+                    <th>Gender</th>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Price (LKR)</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody id="reportTableBody"></tbody>
+        </table>
+    </div>
 
-    <!-- Print Area for Barcode Tags Only -->
-    <div id="printArea"></div>
+    <!-- Firebase SDK v10 Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
+            authDomain: "pos-78811.firebaseapp.com",
+            databaseURL: "https://pos-78811-default-rtdb.firebaseio.com",
+            projectId: "pos-78811",
+            storageBucket: "pos-78811.firebasestorage.app",
+            messagingSenderId: "408721172867",
+            appId: "1:408721172867:web:301073f3f8b6deeaaa2eb6",
+            measurementId: "G-2S3D8JEGQH"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const inventoryRef = ref(db, 'inventory');
         let globalInventory = {};
 
-        // Function to render Table with Edit Button
-        function renderTable(data) {
-            const tbody = document.getElementById('inventoryTableBody');
-            tbody.innerHTML = '';
-            
-            globalInventory = data || {};
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
 
-            Object.keys(globalInventory).forEach(key => {
-                const item = globalInventory[key];
-                const tr = document.createElement('tr');
-                
-                tr.innerHTML = `
-                    <td>${item.barcode || ''}</td>
-                    <td>${item.name || ''}</td>
-                    <td>${item.category || ''}</td>
-                    <td>${item.gender || ''}</td>
-                    <td>${item.color || ''}</td>
-                    <td>${item.size || ''}</td>
-                    <td>${item.price || 0}</td>
-                    <td>${item.stock || 0}</td>
-                    <td>
-                        <button class="btn btn-warning" style="padding: 3px 8px; font-size: 12px;" onclick="populateProductDetails('${key}')">Edit</button>
-                        <button class="btn btn-primary" style="padding: 3px 8px; font-size: 12px;" onclick="printSingleTag('${key}')">Print Tag</button>
-                        <button class="btn btn-danger" style="padding: 3px 8px; font-size: 12px;" onclick="deleteItem('${key}')">Delete</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+            document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+            document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
+            document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
+
+            const barcodeInput = document.getElementById('barcodeInput');
+            barcodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const barcode = barcodeInput.value.trim();
+                    if (barcode) {
+                        populateProductDetails(barcode);
+                    }
+                }
             });
+        });
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
         }
 
-        // Populate Form Data for Editing
-        function populateProductDetails(key) {
-            const item = globalInventory[key];
-            if (!item) return;
-
-            document.getElementById('itemKey').value = key;
-            document.getElementById('barcode').value = item.barcode || '';
-            document.getElementById('itemName').value = item.name || '';
-            document.getElementById('category').value = item.category || '';
-            document.getElementById('gender').value = item.gender || '';
-            document.getElementById('color').value = item.color || '';
-            document.getElementById('size').value = item.size || '';
-            document.getElementById('price').value = item.price || '';
-            document.getElementById('stock').value = item.stock || '';
+        function generateAutoBarcode() {
+            const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('barcodeInput').value = autoCode;
         }
 
-        // Reset Form
-        function resetForm() {
-            document.getElementById('itemKey').value = '';
-            document.getElementById('inventoryForm').reset();
+        function saveProduct() {
+            const barcode = document.getElementById('barcodeInput').value.trim();
+            const name = document.getElementById('itemName').value.trim();
+            const category = document.getElementById('productCategory').value;
+            const gender = document.getElementById('targetGender').value;
+            const color = document.getElementById('itemColor').value.trim() || '-';
+            const size = document.getElementById('itemSize').value.trim();
+            const price = parseFloat(document.getElementById('itemPrice').value);
+            const stock = parseInt(document.getElementById('itemStock').value);
+
+            if (!barcode || !name || !size || isNaN(price) || isNaN(stock)) {
+                alert("කරුණාකර සියලු විස්තර (Barcode, Name, Size, Price, Stock) නිවැරදිව ඇතුළත් කරන්න!");
+                return;
+            }
+
+            const itemData = { barcode, name, category, gender, color, size, price, stock };
+
+            set(ref(db, 'inventory/' + barcode), itemData)
+                .then(() => {
+                    alert("Product එක සාර්ථකව Save වුණා!");
+                    clearForm();
+                })
+                .catch((error) => {
+                    alert("දත්ත සුරැකීමට අපොහොසත විය: " + error.message);
+                });
         }
 
-        // Print Single Tag or All Tags (Clean Barcode Tags Only)
-        function printSingleTag(key) {
-            const item = globalInventory[key];
-            if (!item) return;
+        function clearForm() {
+            document.getElementById('barcodeInput').value = '';
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemColor').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemStock').value = '';
+            document.getElementById('itemSize').value = '';
+        }
 
-            const printArea = document.getElementById('printArea');
-            printArea.innerHTML = ''; // Clear previous tags
+        function populateProductDetails(barcode) {
+            const item = globalInventory[barcode];
+            if (item) {
+                document.getElementById('barcodeInput').value = item.barcode || barcode;
+                document.getElementById('itemName').value = item.name || '';
+                document.getElementById('productCategory').value = item.category || 'Shoe';
+                document.getElementById('targetGender').value = item.gender || 'Male';
+                document.getElementById('itemColor').value = item.color || '';
+                document.getElementById('itemSize').value = item.size || '';
+                document.getElementById('itemPrice').value = item.price !== undefined ? item.price : '';
+                document.getElementById('itemStock').value = item.stock !== undefined ? item.stock : '';
+            }
+        }
 
-            // Create Tag Cards based on Stock Qty or single tag
-            const qty = item.stock > 0 ? item.stock : 1;
-            
-            for (let i = 0; i < qty; i++) {
-                const tag = document.createElement('div');
-                tag.className = 'tag-card';
-                
-                const barcodeId = `barcode-${key}-${i}`;
-                
-                tag.innerHTML = `
-                    <div class="tag-title">DCK FOOTWEAR</div>
-                    <div class="tag-details">${item.name || ''}</div>
-                    <div class="tag-details">${item.category || ''} | ${item.gender || ''} | Size: ${item.size || ''}</div>
-                    <div class="tag-price">LKR ${item.price || 0}</div>
-                    <svg id="${barcodeId}"></svg>
+        window.deleteProduct = function(key) {
+            if (confirm(`ඔබට ස්ථිරවම '${key}' දත්ත පේළිය ඉවත් කිරීමට අවශ්‍යද?`)) {
+                remove(ref(db, 'inventory/' + key))
+                    .then(() => alert("දත්ත සාර්ථකව ඉවත් කළා!"))
+                    .catch((error) => alert("ඉවත් කිරීමට නොහැකි විය: " + error.message));
+            }
+        };
+
+        window.printItemBarcode = function(barcode, name, category, gender, color, size, price, stock) {
+            const printGrid = document.getElementById('printGrid');
+            printGrid.innerHTML = '';
+            let count = parseInt(stock) || 1;
+            if (count > 100) count = 100; // Limits print tags up to 100 for performance
+
+            for (let i = 0; i < count; i++) {
+                const tagDiv = document.createElement('div');
+                tagDiv.className = 'tag-card';
+                const svgId = `barcode_svg_${i}`;
+                const sequentialBarcode = `${barcode}-${i + 1}`;
+
+                tagDiv.innerHTML = `
+                    <h3 style="font-size: 13px; margin-bottom: 2px;">DCK FOOTWEAR</h3>
+                    <p style="font-size: 11px; font-weight: bold; margin: 0;">${name}</p>
+                    <p style="font-size: 10px; color: #555; margin: 0;">${category} | ${gender} | ${color}</p>
+                    <p style="font-size: 10px; margin: 0;">Size: ${size}</p>
+                    <p style="font-size: 11px; margin: 2px 0; font-weight: bold;">LKR ${Number(price).toFixed(2)}</p>
+                    <svg id="${svgId}"></svg>
                 `;
-                
-                printArea.appendChild(tag);
+                printGrid.appendChild(tagDiv);
 
-                // Generate Barcode SVG
-                JsBarcode(`#${barcodeId}`, item.barcode || '000000', {
+                JsBarcode(`#${svgId}`, sequentialBarcode, {
                     format: "CODE128",
-                    width: 1.5,
-                    height: 35,
+                    width: 1.3,
+                    height: 30,
                     displayValue: true,
-                    fontSize: 10
+                    fontSize: 9
                 });
             }
 
+            document.getElementById('printableArea').style.display = 'block';
             window.print();
+            document.getElementById('printableArea').style.display = 'none';
+        };
+
+        window.printStockReport = function() {
+            const reportBody = document.getElementById('reportTableBody');
+            reportBody.innerHTML = '';
+
+            Object.keys(globalInventory).forEach((key) => {
+                const item = globalInventory[key];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.barcode || key}</td>
+                    <td>${item.name || 'undefined'}</td>
+                    <td>${item.category || 'undefined'}</td>
+                    <td>${item.gender || 'undefined'}</td>
+                    <td>${item.color || '-'}</td>
+                    <td>${item.size || 'undefined'}</td>
+                    <td>${item.price !== undefined ? Number(item.price).toFixed(2) : '0.00'}</td>
+                    <td>${item.stock !== undefined ? item.stock : '0'}</td>
+                `;
+                reportBody.appendChild(tr);
+            });
+
+            document.getElementById('printInventoryReport').style.display = 'block';
+            window.print();
+            document.getElementById('printInventoryReport').style.display = 'none';
+        };
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('inventoryTable');
+            tableBody.innerHTML = '';
+
+            if (!data || Object.keys(data).length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-sub);">භාණ්ඩ එකතු කර නොමැත.</td></tr>`;
+                return;
+            }
+
+            Object.keys(data).forEach((key) => {
+                const item = data[key];
+                const tr = document.createElement('tr');
+                const displayBarcode = item.barcode || key;
+                const displayName = item.name || 'undefined';
+                const displayCategory = item.category || 'undefined';
+                const displayGender = item.gender || 'undefined';
+                const displayColor = item.color || '-';
+                const displaySize = item.size || 'undefined';
+                const displayPrice = item.price !== undefined ? Number(item.price).toFixed(2) : '0.00';
+                const displayStock = item.stock !== undefined ? item.stock : 0;
+
+                tr.innerHTML = `
+                    <td><code>${displayBarcode}</code></td>
+                    <td>${displayName}</td>
+                    <td>${displayCategory}</td>
+                    <td>${displayGender}</td>
+                    <td>${displayColor}</td>
+                    <td>${displaySize}</td>
+                    <td>${displayPrice}</td>
+                    <td>${displayStock}</td>
+                    <td style="display: flex; gap: 5px;">
+                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${displayBarcode}', '${displayName}', '${displayCategory}', '${displayGender}', '${displayColor}', '${displaySize}', ${item.price || 0}, ${displayStock})">Print Tag</button>
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteProduct('${key}')">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
         }
+
+        onValue(inventoryRef, (snapshot) => {
+            const data = snapshot.val();
+            globalInventory = data || {};
+            renderTable(globalInventory);
+        });
     </script>
 </body>
 </html>
