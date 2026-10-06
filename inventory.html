@@ -182,13 +182,19 @@
             border: 1px solid var(--card-border);
         }
 
+        .section-title-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 10px;
+        }
+
         .section-title {
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 20px;
             color: var(--text-main);
-            border-bottom: 1px solid var(--card-border);
-            padding-bottom: 10px;
         }
 
         .form-group {
@@ -231,13 +237,13 @@
         }
 
         .btn {
-            padding: 12px 18px;
+            padding: 10px 16px;
             border: none;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             text-transform: uppercase;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .btn-primary {
@@ -273,7 +279,7 @@
         }
 
         th, td {
-            padding: 12px 14px;
+            padding: 12px 10px;
             border-bottom: 1px solid var(--card-border);
             font-size: 13px;
         }
@@ -318,14 +324,22 @@
             page-break-inside: avoid;
         }
 
+        /* Stock Table Print View Styling */
+        #stockPrintArea {
+            display: none;
+            padding: 20px;
+            background: #fff;
+            color: #000;
+        }
+
         @media print {
             body * {
                 visibility: hidden;
             }
-            #printableArea, #printableArea * {
+            #printableArea, #printableArea *, #stockPrintArea, #stockPrintArea * {
                 visibility: visible;
             }
-            #printableArea {
+            #printableArea, #stockPrintArea {
                 display: block !important;
                 position: absolute;
                 left: 0;
@@ -370,7 +384,9 @@
 
         <div class="container">
             <div class="card">
-                <h2 class="section-title">Add / Update Product</h2>
+                <div class="section-title-container">
+                    <h2 class="section-title">Add / Update Product</h2>
+                </div>
                 
                 <div class="form-group">
                     <label>Barcode / Item Code</label>
@@ -404,237 +420,14 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Color</label>
+                    <input type="text" id="itemColor" class="form-control" placeholder="e.g. Black / Brown / Red">
+                </div>
+
+                <div class="form-group">
                     <label>Size</label>
                     <input type="text" id="itemSize" class="form-control" placeholder="e.g. 7 | 8 | 9">
                 </div>
 
                 <div class="form-group">
                     <label>Price (LKR)</label>
-                    <input type="number" id="itemPrice" class="form-control" placeholder="0.00">
-                </div>
-
-                <div class="form-group">
-                    <label>Stock Quantity (Pieces)</label>
-                    <input type="number" id="itemStock" class="form-control" placeholder="0">
-                </div>
-
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="saveProductBtn" type="button">Save Product</button>
-                </div>
-            </div>
-
-            <div class="card table-container">
-                <h2 class="section-title">Stock Inventory</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Barcode</th>
-                            <th>Item Name</th>
-                            <th>Category</th>
-                            <th>Gender</th>
-                            <th>Size</th>
-                            <th>Price</th>
-                            <th>Stock</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventoryTable">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
-
-    <div id="printableArea">
-        <div id="printGrid" class="print-grid"></div>
-    </div>
-
-    <!-- Firebase SDK v10 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
-            authDomain: "pos-78811.firebaseapp.com",
-            databaseURL: "https://pos-78811-default-rtdb.firebaseio.com",
-            projectId: "pos-78811",
-            storageBucket: "pos-78811.firebasestorage.app",
-            messagingSenderId: "408721172867",
-            appId: "1:408721172867:web:301073f3f8b6deeaaa2eb6",
-            measurementId: "G-2S3D8JEGQH"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const inventoryRef = ref(db, 'inventory');
-
-        let globalInventory = {};
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-
-            document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
-            document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
-            document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
-
-            const barcodeInput = document.getElementById('barcodeInput');
-            barcodeInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const barcode = barcodeInput.value.trim();
-                    if (barcode) {
-                        populateProductDetails(barcode);
-                    }
-                }
-            });
-        });
-
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        }
-
-        function generateAutoBarcode() {
-            const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('barcodeInput').value = autoCode;
-        }
-
-        function saveProduct() {
-            const barcode = document.getElementById('barcodeInput').value.trim();
-            const name = document.getElementById('itemName').value.trim();
-            const category = document.getElementById('productCategory').value;
-            const gender = document.getElementById('targetGender').value;
-            const size = document.getElementById('itemSize').value.trim();
-            const price = parseFloat(document.getElementById('itemPrice').value);
-            const stock = parseInt(document.getElementById('itemStock').value);
-
-            if (!barcode || !name || !size || isNaN(price) || isNaN(stock)) {
-                alert("කරුණාකර සියලු විස්තර නිවැරදිව ඇතුළත් කරන්න!");
-                return;
-            }
-
-            const itemData = { barcode, name, category, gender, size, price, stock };
-
-            set(ref(db, 'inventory/' + barcode), itemData)
-                .then(() => {
-                    alert("Product එක සාර්ථකව Save වුණා!");
-                    clearForm();
-                })
-                .catch((error) => {
-                    alert("දත්ත සුරැකීමට අපොහොසත් විය: " + error.message);
-                });
-        }
-
-        function clearForm() {
-            document.getElementById('barcodeInput').value = '';
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemPrice').value = '';
-            document.getElementById('itemStock').value = '';
-            document.getElementById('itemSize').value = '';
-        }
-
-        function populateProductDetails(barcode) {
-            const item = globalInventory[barcode];
-            if (item) {
-                document.getElementById('barcodeInput').value = item.barcode;
-                document.getElementById('itemName').value = item.name;
-                document.getElementById('productCategory').value = item.category;
-                document.getElementById('targetGender').value = item.gender;
-                document.getElementById('itemSize').value = item.size;
-                document.getElementById('itemPrice').value = item.price;
-                document.getElementById('itemStock').value = item.stock;
-            }
-        }
-
-        window.deleteProduct = function(barcode) {
-            if (confirm(`ඔබට ස්ථිරවම '${barcode}' බාර්කෝඩ් එක සහිත භාණ්ඩය ඉවත් කිරීමට අවශ්‍යද?`)) {
-                remove(ref(db, 'inventory/' + barcode))
-                    .catch((error) => alert("ඉවත් කිරීමට නොහැකි විය: " + error.message));
-            }
-        };
-
-        window.printItemBarcode = function(barcode, name, category, gender, size, price, stock) {
-            const printGrid = document.getElementById('printGrid');
-            printGrid.innerHTML = '';
-
-            let count = parseInt(stock) || 1;
-            if (count > 100) count = 100; 
-
-            for (let i = 0; i < count; i++) {
-                const tagDiv = document.createElement('div');
-                tagDiv.className = 'tag-card';
-                
-                const svgId = `barcode_svg_${i}`;
-                const sequentialBarcode = `${barcode}-${i + 1}`; 
-
-                tagDiv.innerHTML = `
-                    <h3 style="font-size: 13px; margin-bottom: 2px;">DCK FOOTWEAR</h3>
-                    <p style="font-size: 11px; font-weight: bold; margin: 0;">${name}</p>
-                    <p style="font-size: 10px; color: #555; margin: 0;">${category} | ${gender}</p>
-                    <p style="font-size: 10px; margin: 0;">Size: ${size}</p>
-                    <p style="font-size: 11px; margin: 2px 0; font-weight: bold;">LKR ${Number(price).toFixed(2)}</p>
-                    <svg id="${svgId}"></svg>
-                `;
-                printGrid.appendChild(tagDiv);
-
-                JsBarcode(`#${svgId}`, sequentialBarcode, { 
-                    format: "CODE128",
-                    width: 1.3,
-                    height: 30,
-                    displayValue: true,
-                    fontSize: 9
-                });
-            }
-
-            document.getElementById('printableArea').style.display = 'block';
-            window.print();
-            document.getElementById('printableArea').style.display = 'none';
-        };
-
-        function renderTable(data) {
-            const tableBody = document.getElementById('inventoryTable');
-            tableBody.innerHTML = '';
-
-            if (!data) {
-                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-sub);">භාණ්ඩ එකතු කර නොමැත.</td></tr>`;
-                return;
-            }
-
-            const keys = Object.keys(data);
-            if (keys.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-sub);">භාණ්ඩ එකතු කර නොමැත.</td></tr>`;
-                return;
-            }
-
-            keys.forEach((key) => {
-                const item = data[key];
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><code>${item.barcode}</code></td>
-                    <td>${item.name}</td>
-                    <td>${item.category}</td>
-                    <td>${item.gender}</td>
-                    <td>${item.size}</td>
-                    <td>${Number(item.price).toFixed(2)}</td>
-                    <td>${item.stock}</td>
-                    <td style="display: flex; gap: 5px;">
-                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${item.barcode}', '${item.name}', '${item.category}', '${item.gender}', '${item.size}', ${item.price}, ${item.stock})">Print Tag</button>
-                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteProduct('${item.barcode}')">Delete</button>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
-            });
-        }
-
-        onValue(inventoryRef, (snapshot) => {
-            const data = snapshot.val();
-            globalInventory = data || {};
-            renderTable(globalInventory);
-        });
-    </script>
-</body>
-</html>
