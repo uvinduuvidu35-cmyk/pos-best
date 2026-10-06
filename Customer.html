@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DCK Footwear - Customers</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             /* Dark Theme Colors */
@@ -279,14 +284,6 @@
             font-size: 11px;
             text-transform: uppercase;
         }
-
-        code {
-            background: rgba(0, 136, 255, 0.1);
-            color: var(--primary-blue);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-        }
     </style>
 </head>
 <body>
@@ -375,33 +372,19 @@
     </main>
 
     <script>
-        // Mock Customer Data in LocalStorage (for demonstration)
-        const mockCustomers = [
-            {
-                barcode: "DCK987654",
-                name: "Kamal Perera",
-                phone: "071-xxxxxxx",
-                points: 150,
-                history: [
-                    { date: "2026-10-02 14:30", items: "Formal Shoe x 1", total: 4500.00 },
-                    { date: "2026-09-15 11:20", items: "Slippers x 2", total: 1200.00 }
-                ]
-            },
-            {
-                barcode: "DCK123456",
-                name: "Nimal Silva",
-                phone: "077-xxxxxxx",
-                points: 300,
-                history: [
-                    { date: "2026-10-03 09:15", items: "Umbrella x 1, Leather Shoe x 1", total: 6000.00 }
-                ]
-            }
-        ];
+        // Firebase Configuration (මෙතැනට ඔබේ Firebase Console එකේ Credentials ලබා දී දමන්න)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-        // Save mock data if not exists
-        if (!localStorage.getItem('customers')) {
-            localStorage.setItem('customers', JSON.stringify(mockCustomers));
-        }
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
         window.onload = () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -424,37 +407,62 @@
             }
         });
 
-        function findCustomer() {
+        async function findCustomer() {
             const barcode = barcodeInput.value.trim();
             if (!barcode) return;
 
-            const customers = JSON.parse(localStorage.getItem('customers')) || [];
-            const customer = customers.find(c => c.barcode === barcode);
+            try {
+                // Firebase receipts collection එකෙන් බාර්කෝඩ් එක සොයයි
+                const querySnapshot = await db.collection("receipts")
+                                              .where("barcode", "==", barcode)
+                                              .get();
 
-            if (customer) {
-                document.getElementById('custBarcode').textContent = customer.barcode;
-                document.getElementById('custName').textContent = customer.name;
-                document.getElementById('custPhone').textContent = customer.phone;
-                document.getElementById('custPoints').textContent = customer.points;
+                if (!querySnapshot.empty) {
+                    const receiptData = querySnapshot.docs[0].data();
 
-                const historyTable = document.getElementById('historyTable');
-                historyTable.innerHTML = '';
+                    document.getElementById('custBarcode').textContent = receiptData.barcode || barcode;
+                    document.getElementById('custName').textContent = receiptData.customerName || "N/A";
+                    document.getElementById('custPhone').textContent = receiptData.customerPhone || "N/A";
+                    document.getElementById('custPoints').textContent = receiptData.loyaltyPoints || 0;
 
-                customer.history.forEach(order => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${order.date}</td>
-                        <td>${order.items}</td>
-                        <td>${order.total.toFixed(2)}</td>
-                    `;
-                    historyTable.appendChild(tr);
-                });
+                    const historyTable = document.getElementById('historyTable');
+                    historyTable.innerHTML = '';
 
-                document.getElementById('customerDetails').style.display = 'block';
-            } else {
-                alert("මෙම බාර්කෝඩ් එකට අදාළ පාරිභෝගිකයෙකු නොමැත.");
-                document.getElementById('customerDetails').style.display = 'none';
-                document.getElementById('historyTable').innerHTML = '';
+                    // අදාළ Customer ගේ සියලුම අතීත Receipt History එක Firebase එකෙන් ලබා ගනී
+                    if (receiptData.customerPhone) {
+                        const customerHistorySnapshot = await db.collection("receipts")
+                            .where("customerPhone", "==", receiptData.customerPhone)
+                            .get();
+
+                        customerHistorySnapshot.forEach(doc => {
+                            const item = doc.data();
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${item.date || 'N/A'}</td>
+                                <td>${Array.isArray(item.items) ? item.items.join(', ') : item.items}</td>
+                                <td>${Number(item.total).toFixed(2)}</td>
+                            `;
+                            historyTable.appendChild(tr);
+                        });
+                    } else {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${receiptData.date || 'N/A'}</td>
+                            <td>${Array.isArray(receiptData.items) ? receiptData.items.join(', ') : receiptData.items}</td>
+                            <td>${Number(receiptData.total).toFixed(2)}</td>
+                        `;
+                        historyTable.appendChild(tr);
+                    }
+
+                    document.getElementById('customerDetails').style.display = 'block';
+                } else {
+                    alert("මෙම බාර්කෝඩ් එකට අදාළ Receipt එකක් සොයාගත නොහැකි විය.");
+                    document.getElementById('customerDetails').style.display = 'none';
+                    document.getElementById('historyTable').innerHTML = '';
+                }
+            } catch (error) {
+                console.error("Firebase Search Error: ", error);
+                alert("ඩේටා ලබාගැනීමේදී දෝෂයක් සිදු විය.");
             }
         }
     </script>
