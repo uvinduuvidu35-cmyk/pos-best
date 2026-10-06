@@ -289,6 +289,10 @@
 
         #printableArea, #printInventoryReport {
             display: none;
+            background: #fff;
+            color: #000;
+            padding: 15px;
+            font-family: Arial, sans-serif;
         }
 
         .print-grid {
@@ -300,32 +304,20 @@
         .tag-card {
             background: #fff;
             color: #000;
-            border: 1px dashed #000;
-            padding: 6px;
+            border: 1px dashed #ccc;
+            padding: 10px;
             text-align: center;
-            width: 250px;
-            height: 120px;
+            width: 220px;
             box-sizing: border-box;
             page-break-inside: avoid;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .tag-card svg {
-            width: 90% !important;
-            height: auto !important;
-            max-height: 48px;
-            margin-top: 4px;
         }
 
         @media print {
             body * { visibility: hidden; }
-            #printableArea, #printableArea * {
+            #printableArea, #printableArea *, #printInventoryReport, #printInventoryReport * {
                 visibility: visible;
             }
-            #printableArea {
+            #printableArea, #printInventoryReport {
                 display: block !important;
                 position: absolute;
                 left: 0;
@@ -585,8 +577,6 @@
             let count = parseInt(stock) || 1;
             if (count > 100) count = 100;
 
-            const colorAbbr = (color && color !== '-') ? color.substring(0, 3).toUpperCase() : '';
-
             for (let i = 0; i < count; i++) {
                 const tagDiv = document.createElement('div');
                 tagDiv.className = 'tag-card';
@@ -594,22 +584,21 @@
                 const sequentialBarcode = `${barcode}-${i + 1}`;
 
                 tagDiv.innerHTML = `
-                    <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 2px;">DCK FOOTWEAR</h3>
-                    <p style="font-size: 12px; font-weight: bold; margin-bottom: 2px;">${name}</p>
-                    <p style="font-size: 10px; color: #000; margin-bottom: 2px;">${category} | ${gender} | ${colorAbbr}</p>
-                    <p style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">Size: ${size}</p>
-                    <p style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">LKR ${Number(price).toFixed(2)}</p>
+                    <h3 style="font-size: 13px; margin-bottom: 2px;">DCK FOOTWEAR</h3>
+                    <p style="font-size: 11px; font-weight: bold; margin: 0;">${name}</p>
+                    <p style="font-size: 10px; color: #555; margin: 0;">${category} | ${gender} | ${color}</p>
+                    <p style="font-size: 10px; margin: 0;">Size: ${size}</p>
+                    <p style="font-size: 11px; margin: 2px 0; font-weight: bold;">LKR ${Number(price).toFixed(2)}</p>
                     <svg id="${svgId}"></svg>
                 `;
                 printGrid.appendChild(tagDiv);
 
                 JsBarcode(`#${svgId}`, sequentialBarcode, {
                     format: "CODE128",
-                    width: 2.2,
-                    height: 50,
+                    width: 1.3,
+                    height: 30,
                     displayValue: true,
-                    fontSize: 14,
-                    margin: 2
+                    fontSize: 9
                 });
             }
 
