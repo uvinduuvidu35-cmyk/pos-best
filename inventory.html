@@ -21,6 +21,7 @@
             --option-bg: #1e293b;
             --option-text: #ffffff;
             --danger-color: #ef4444;
+            --warning-color: #f59e0b;
         }
 
         [data-theme="light"] {
@@ -38,6 +39,7 @@
             --option-bg: #ffffff;
             --option-text: #0f172a;
             --danger-color: #dc2626;
+            --warning-color: #d97706;
         }
 
         * {
@@ -255,6 +257,12 @@
             background: rgba(239, 68, 68, 0.2);
             color: var(--danger-color);
             border: 1px solid var(--danger-color);
+        }
+
+        .btn-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+            border: 1px solid var(--warning-color);
         }
 
         .btn:hover { opacity: 0.9; }
@@ -654,6 +662,7 @@
                     <td>${displayPrice}</td>
                     <td>${displayStock}</td>
                     <td style="display: flex; gap: 5px;">
+                        <button class="btn btn-warning" style="padding: 4px 8px; font-size: 11px;" onclick="populateProductDetails('${displayBarcode}')">Edit</button>
                         <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${displayBarcode}', '${displayName}', '${displayCategory}', '${displayGender}', '${displayColor}', '${displaySize}', ${item.price || 0}, ${displayStock})">Print Tag</button>
                         <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteProduct('${key}')">Delete</button>
                     </td>
