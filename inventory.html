@@ -289,10 +289,6 @@
 
         #printableArea, #printInventoryReport {
             display: none;
-            background: #fff;
-            color: #000;
-            padding: 15px;
-            font-family: Arial, sans-serif;
         }
 
         .print-grid {
@@ -314,10 +310,10 @@
 
         @media print {
             body * { visibility: hidden; }
-            #printableArea, #printableArea *, #printInventoryReport, #printInventoryReport * {
+            #printableArea, #printableArea * {
                 visibility: visible;
             }
-            #printableArea, #printInventoryReport {
+            #printableArea {
                 display: block !important;
                 position: absolute;
                 left: 0;
@@ -577,11 +573,14 @@
             let count = parseInt(stock) || 1;
             if (count > 100) count = 100;
 
+            const colorAbbr = (color && color !== '-') ? color.substring(0, 3).toUpperCase() : '';
+
             for (let i = 0; i < count; i++) {
                 const tagDiv = document.createElement('div');
                 tagDiv.className = 'tag-card';
                 const svgId = `barcode_svg_${i}`;
-                const sequentialBarcode = `${barcode}-${i + 1}`;
+                const baseBarcode = colorAbbr ? `${barcode}-${colorAbbr}` : barcode;
+                const sequentialBarcode = `${baseBarcode}-${i + 1}`;
 
                 tagDiv.innerHTML = `
                     <h3 style="font-size: 13px; margin-bottom: 2px;">DCK FOOTWEAR</h3>
