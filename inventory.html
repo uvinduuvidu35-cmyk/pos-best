@@ -292,24 +292,41 @@
             font-family: monospace;
         }
 
-        #printableLabel {
+        /* 🖨️ Multi-tag Print Area Layout */
+        #printableArea {
             display: none;
             background: #fff;
             color: #000;
-            padding: 15px;
-            text-align: center;
-            width: 250px;
+            padding: 10px;
             font-family: 'Courier New', monospace;
+        }
+
+        .print-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+
+        .tag-card {
+            background: #fff;
+            color: #000;
+            border: 1px dashed #ccc;
+            padding: 10px;
+            text-align: center;
+            width: 220px;
+            box-sizing: border-box;
+            page-break-inside: avoid;
         }
 
         @media print {
             body * {
                 visibility: hidden;
             }
-            #printableLabel, #printableLabel * {
+            #printableArea, #printableArea * {
                 visibility: visible;
             }
-            #printableLabel {
+            #printableArea {
                 display: block !important;
                 position: absolute;
                 left: 0;
@@ -327,7 +344,7 @@
                 <h2>DCK Footwear</h2>
             </div>
             <ul class="nav-links">
-                <li><a href="dashbord.html">Dashboard</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
                 <li><a href="sales.html">Sales & Billing</a></li>
                 <li><a href="inventory.html" class="active">Inventory</a></li>
                 <li><a href="Customer.html">Customers</a></li>
@@ -429,13 +446,9 @@
         </div>
     </main>
 
-    <div id="printableLabel">
-        <h3 style="font-size: 15px; margin-bottom: 2px;">DCK FOOTWEAR</h3>
-        <p id="lblItemName" style="font-size: 12px; font-weight: bold;"></p>
-        <p id="lblCategoryGender" style="font-size: 11px; color: #555;"></p>
-        <p id="lblItemSize" style="font-size: 12px;"></p>
-        <p id="lblItemPrice" style="font-size: 13px; margin: 2px 0;"></p>
-        <svg id="labelBarcode"></svg>
+    <!-- 🖨️ Printable Area Container -->
+    <div id="printableArea">
+        <div id="printGrid" class="print-grid"></div>
     </div>
 
     <!-- Firebase SDK v10 -->
@@ -443,7 +456,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔥 ඔබ ලබා දුන් Firebase Config දත්ත මෙතැනට ඇතුළත් කර ඇත
         const firebaseConfig = {
             apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
             authDomain: "pos-78811.firebaseapp.com",
@@ -547,23 +559,41 @@
             }
         };
 
-        window.printItemBarcode = function(barcode, name, category, gender, size, price) {
-            document.getElementById('lblItemName').textContent = name;
-            document.getElementById('lblCategoryGender').textContent = `${category} | ${gender}`;
-            document.getElementById('lblItemSize').textContent = `Size: ${size}`;
-            document.getElementById('lblItemPrice').textContent = `LKR ${Number(price).toFixed(2)}`;
+        // 🖨️ Stock ප්‍රමාණයට අනුව Multiple Barcodes සෑදීමේ ශ්‍රිතය
+        window.printItemBarcode = function(barcode, name, category, gender, size, price, stock) {
+            const printGrid = document.getElementById('printGrid');
+            printGrid.innerHTML = '';
 
-            JsBarcode("#labelBarcode", barcode, {
-                format: "CODE128",
-                width: 1.5,
-                height: 35,
-                displayValue: true,
-                fontSize: 10
-            });
+            let count = parseInt(stock) || 1;
+            if (count > 100) count = 100; // උපරිම ලිමිට් එක 100 දක්වා සීමා කර ඇත
 
-            document.getElementById('printableLabel').style.display = 'block';
+            for (let i = 0; i < count; i++) {
+                const tagDiv = document.createElement('div');
+                tagDiv.className = 'tag-card';
+                
+                const svgId = `barcode_svg_${i}`;
+                tagDiv.innerHTML = `
+                    <h3 style="font-size: 13px; margin-bottom: 2px;">DCK FOOTWEAR</h3>
+                    <p style="font-size: 11px; font-weight: bold; margin: 0;">${name}</p>
+                    <p style="font-size: 10px; color: #555; margin: 0;">${category} | ${gender}</p>
+                    <p style="font-size: 10px; margin: 0;">Size: ${size}</p>
+                    <p style="font-size: 11px; margin: 2px 0; font-weight: bold;">LKR ${Number(price).toFixed(2)}</p>
+                    <svg id="${svgId}"></svg>
+                `;
+                printGrid.appendChild(tagDiv);
+
+                JsBarcode(`#${svgId}`, barcode, {
+                    format: "CODE128",
+                    width: 1.3,
+                    height: 30,
+                    displayValue: true,
+                    fontSize: 9
+                });
+            }
+
+            document.getElementById('printableArea').style.display = 'block';
             window.print();
-            document.getElementById('printableLabel').style.display = 'none';
+            document.getElementById('printableArea').style.display = 'none';
         };
 
         function renderTable(data) {
@@ -593,7 +623,7 @@
                     <td>${Number(item.price).toFixed(2)}</td>
                     <td>${item.stock}</td>
                     <td style="display: flex; gap: 5px;">
-                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${item.barcode}', '${item.name}', '${item.category}', '${item.gender}', '${item.size}', ${item.price})">Print Tag</button>
+                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${item.barcode}', '${item.name}', '${item.category}', '${item.gender}', '${item.size}', ${item.price}, ${item.stock})">Print Tag</button>
                         <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteProduct('${item.barcode}')">Delete</button>
                     </td>
                 `;
