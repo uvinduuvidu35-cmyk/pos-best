@@ -1,414 +1,358 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DCK Footwear - Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCK Footwear - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* Dark Theme Colors (Default) */
+            --bg-color: #0b0d14;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+            --primary-blue: #0088ff;
+            --gradient-start: #0284c7;
+            --gradient-end: #0369a1;
+            --glow-color: rgba(0, 136, 255, 0.3);
+            --sidebar-bg: #0f172a;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --option-bg: #1e293b;
+            --option-text: #ffffff;
+        }
 
-    <style>
-        :root {
-            /* Dark Theme Colors (Default) */
-            --bg-color: #0b0d14;
-            --card-bg: rgba(255, 255, 255, 0.04);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --text-main: #ffffff;
-            --text-sub: #94a3b8;
-            --primary-blue: #0088ff;
-            --gradient-start: #0284c7;
-            --gradient-end: #0369a1;
-            --sidebar-bg: #0f172a;
-        }
+        [data-theme="light"] {
+            /* Light Theme Colors */
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --primary-blue: #0284c7;
+            --gradient-start: #0284c7;
+            --gradient-end: #0369a1;
+            --glow-color: rgba(2, 132, 199, 0.15);
+            --sidebar-bg: #ffffff;
+            --input-bg: #f1f5f9;
+            --option-bg: #ffffff;
+            --option-text: #0f172a;
+        }
 
-        [data-theme="light"] {
-            /* Light Theme Colors */
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --card-border: #e2e8f0;
-            --text-main: #0f172a;
-            --text-sub: #64748b;
-            --primary-blue: #0284c7;
-            --gradient-start: #0284c7;
-            --gradient-end: #0369a1;
-            --sidebar-bg: #ffffff;
-        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-        }
+        body {
+            background-color: var(--bg-color);
+            min-height: 100vh;
+            display: flex;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
 
-        body {
-            background-color: var(--bg-color);
-            min-height: 100vh;
-            display: flex;
-            color: var(--text-main);
-            overflow-x: hidden;
-        }
+        .sidebar {
+            width: 250px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            padding: 25px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
 
-        .sidebar {
-            width: 250px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--card-border);
-            padding: 25px 15px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 1000;
-        }
+        .sidebar-brand h2 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+        }
 
-        .sidebar-brand h2 {
-            font-size: 20px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 30px;
-            text-align: center;
-            text-transform: uppercase;
-        }
+        .nav-links {
+            list-style: none;
+        }
 
-        .nav-links {
-            list-style: none;
-        }
+        .nav-links li a {
+            display: block;
+            padding: 12px 16px;
+            color: var(--text-sub);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
 
-        .nav-links li a {
-            display: block;
-            padding: 12px 16px;
-            color: var(--text-sub);
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: 500;
-            font-size: 14px;
-            margin-bottom: 6px;
-        }
+        .nav-links li a:hover, .nav-links li a.active {
+            background: rgba(0, 136, 255, 0.15);
+            color: var(--primary-blue);
+            border: 1px solid var(--primary-blue);
+        }
 
-        .nav-links li a:hover, .nav-links li a.active {
-            background: rgba(0, 136, 255, 0.15);
-            color: var(--primary-blue);
-            border: 1px solid var(--primary-blue);
-        }
+        .main-content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-        .main-content {
-            margin-left: 250px;
-            width: calc(100% - 250px);
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
 
-        .top-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
+        .top-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-        .top-header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+        .welcome-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+        }
 
-        .welcome-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 600;
-        }
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
 
-        .avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--primary-blue);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-        }
+        .theme-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+        }
 
-        .theme-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            padding: 8px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 13px;
-        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
-        .stat-card {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-sub);
+            font-weight: 500;
+        }
 
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-sub);
-            font-weight: 500;
-        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
 
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text-main);
-        }
+        .chart-container {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        .chart-container {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            height: 400px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        canvas {
-            max-height: 350px;
-            width: 100% !important;
-        }
-    </style>
+        canvas {
+            max-height: 350px;
+        }
+    </style>
 </head>
 <body>
 
-    <aside class="sidebar">
-        <div>
-            <div class="sidebar-brand">
-                <h2>DCK Footwear</h2>
-            </div>
-            <ul class="nav-links">
-                <li><a href="dashboard.html" class="active">Dashboard</a></li>
-                <li><a href="sales.html">Sales & Billing</a></li>
-                <li><a href="inventory.html">Inventory</a></li>
-                <li><a href="Customer.html">Customers</a></li>
-                <li><a href="chart.html">Charts</a></li>
-                <li><a href="settings.html">Settings</a></li>
-            </ul>
-        </div>
-        <ul class="nav-links">
-            <li><a href="index.html">Sign Out</a></li>
-        </ul>
-    </aside>
+    <aside class="sidebar">
+        <div>
+            <div class="sidebar-brand">
+                <h2>DCK Footwear</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                <li><a href="sales.html">Sales & Billing</a></li>
+                <li><a href="inventory.html">Inventory</a></li>
+                <li><a href="Customer.html">Customers</a></li>
+                <li><a href="chart.html">Charts</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html">Sign Out</a></li>
+        </ul>
+    </aside>
 
-    <main class="main-content">
-        <div class="top-header">
-            <h1>Dashboard Overview</h1>
-            <div class="user-profile">
-                <button class="theme-btn" onclick="toggleTheme()">🌓 Theme</button>
-                <div class="welcome-badge">
-                    <div class="avatar">M</div>
-                    <span>Welcome, M4K</span>
-                </div>
-            </div>
-        </div>
+    <main class="main-content">
+        <div class="top-header">
+            <h1>Dashboard Overview</h1>
+            <div class="user-profile">
+                <button class="theme-btn" onclick="toggleTheme()">🌓 Theme</button>
+                <div class="welcome-badge">
+                    <div class="avatar">M</div>
+                    <span>Welcome, M4K</span>
+                </div>
+            </div>
+        </div>
 
-        <section class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-label">Total Sales (Today)</span>
-                <span class="stat-value" id="totalSales">LKR 0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Total Orders</span>
-                <span class="stat-value" id="totalOrders">0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Items Low in Stock</span>
-                <span class="stat-value" id="lowStockItems">0</span>
-            </div>
-        </section>
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Total Sales (Today)</span>
+                <span class="stat-value" id="totalSales">LKR 0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Total Orders</span>
+                <span class="stat-value" id="totalOrders">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Items Low in Stock</span>
+                <span class="stat-value" id="lowStockItems">0</span>
+            </div>
+        </section>
 
-        <section class="chart-container">
-            <canvas id="salesChart"></canvas>
-        </section>
-    </main>
+        <section class="chart-container">
+            <canvas id="salesChart"></canvas>
+        </section>
+    </main>
 
-    <script>
-        let salesChart;
+    <script>
+        window.onload = () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        };
 
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
-            authDomain: "pos-78811.firebaseapp.com",
-            databaseURL: "https://pos-78811-default-rtdb.firebaseio.com",
-            projectId: "pos-78811",
-            storageBucket: "pos-78811.firebasestorage.app",
-            messagingSenderId: "408721172867",
-            appId: "1:408721172867:web:301073f3f8b6deeaaa2eb6",
-            measurementId: "G-2S3D8JEGQH"
-        };
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+    </script>
 
-        // Initialize Firebase & Firestore
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    <!-- Firebase Realtime Database Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
-        window.onload = () => {
-            // Apply saved theme on load
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            
-            initChart();
-            listenToRealtimeData();
-        };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
+            authDomain: "pos-78811.firebaseapp.com",
+            databaseURL: "https://pos-78811-default-rtdb.firebaseio.com",
+            projectId: "pos-78811",
+            storageBucket: "pos-78811.firebasestorage.app",
+            messagingSenderId: "408721172867",
+            appId: "1:408721172867:web:301073f3f8b6deeaaa2eb6",
+            measurementId: "G-2S3D8JEGQH"
+        };
 
-        // Theme Toggle Function
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+        // Initialize Firebase & Database
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-            // Update Chart Colors according to Theme
-            updateChartTheme();
-        }
+        // Chart Initialization
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Weekly Sales (LKR)',
+                    data: [0, 0, 0, 0, 0, 0, 0],
+                    borderColor: '#0088ff',
+                    backgroundColor: 'rgba(0, 136, 255, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    }
+                }
+            }
+        });
 
-        // Initialize Sales Chart
-        function initChart() {
-            const ctx = document.getElementById('salesChart').getContext('2d');
-            const subColor = getComputedStyle(document.documentElement).getPropertyValue('--text-sub').trim();
+        // 1. Listen for Realtime Dashboard Stats
+        const statsRef = ref(database, 'dashboard/stats');
+        onValue(statsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                document.getElementById('totalSales').innerText = `LKR ${(data.totalSales || 0).toLocaleString()}`;
+                document.getElementById('totalOrders').innerText = data.totalOrders || 0;
+                document.getElementById('lowStockItems').innerText = data.lowStockItems || 0;
+            }
+        });
 
-            salesChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Weekly Sales (LKR)',
-                        data: [0, 0, 0, 0, 0, 0, 0],
-                        borderColor: '#0088ff',
-                        backgroundColor: 'rgba(0, 136, 255, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: subColor }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: { color: subColor },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Real-time Firestore Listener for Customer Sales Data (`receipts`)
-        function listenToRealtimeData() {
-            db.collection("receipts").onSnapshot((snapshot) => {
-                let todayTotalSales = 0;
-                let totalOrdersCount = snapshot.size; 
-                let weeklyTotals = [0, 0, 0, 0, 0, 0, 0]; // Mon-Sun
-
-                const todayDateStr = new Date().toDateString();
-
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const receiptTotal = Number(data.total || 0);
-                    const receiptDateStr = data.date || "";
-
-                    if (receiptDateStr) {
-                        const parsedDate = new Date(receiptDateStr);
-
-                        if (!isNaN(parsedDate)) {
-                            // Calculate Today's Sales
-                            if (parsedDate.toDateString() === todayDateStr) {
-                                todayTotalSales += receiptTotal;
-                            }
-
-                            // Calculate Weekly Sales (Mon = 0, Sun = 6)
-                            let dayIdx = parsedDate.getDay();
-                            let adjustedDay = dayIdx === 0 ? 6 : dayIdx - 1; 
-                            weeklyTotals[adjustedDay] += receiptTotal;
-                        }
-                    }
-                });
-
-                // Update Stats
-                document.getElementById('totalSales').innerText = `LKR ${todayTotalSales.toLocaleString()}`;
-                document.getElementById('totalOrders').innerText = totalOrdersCount;
-
-                // Update Chart Data
-                if (salesChart) {
-                    salesChart.data.datasets[0].data = weeklyTotals;
-                    salesChart.update();
-                }
-
-            }, (error) => {
-                console.error("Firestore Error: ", error);
-            });
-
-            // Inventory Check (Low Stock Items)
-            db.collection("inventory").onSnapshot((snapshot) => {
-                let lowStockCount = 0;
-                snapshot.forEach((doc) => {
-                    const item = doc.data();
-                    if (Number(item.qty || 0) < 5) {
-                        lowStockCount++;
-                    }
-                });
-                document.getElementById('lowStockItems').innerText = lowStockCount;
-            }, (err) => {
-                console.log("Inventory collection sync check");
-            });
-        }
-
-        // Update Chart Labels Color on Theme Toggle
-        function updateChartTheme() {
-            if (salesChart) {
-                const subColor = getComputedStyle(document.documentElement).getPropertyValue('--text-sub').trim();
-                salesChart.options.scales.x.ticks.color = subColor;
-                salesChart.options.scales.y.ticks.color = subColor;
-                salesChart.update();
-            }
-        }
-    </script>
+        // 2. Listen for Realtime Weekly Sales Chart Data
+        const chartRef = ref(database, 'dashboard/weeklySales');
+        onValue(chartRef, (snapshot) => {
+            const chartData = snapshot.val();
+            if (chartData) {
+                // expecting array like [3000, 6000, 11000, ...] or object
+                salesChart.data.datasets[0].data = Object.values(chartData);
+                salesChart.update();
+            }
+        });
+    </script>
 </body>
 </html>
