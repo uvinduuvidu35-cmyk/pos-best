@@ -6,6 +6,7 @@
     <title>DCK Footwear - Sales & Billing</title>
     <style>
         :root {
+            /* Dark Theme Colors (Default) */
             --bg-color: #0b0d14;
             --card-bg: rgba(255, 255, 255, 0.04);
             --card-border: rgba(255, 255, 255, 0.1);
@@ -22,6 +23,7 @@
         }
 
         [data-theme="light"] {
+            /* Light Theme Colors */
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --card-border: #e2e8f0;
@@ -383,6 +385,7 @@
                 Object.keys(data).forEach(key => {
                     const product = data[key];
                     const currentQty = product.quantity !== undefined ? product.quantity : (product.qty !== undefined ? product.qty : 0);
+                    const color = product.color !== undefined ? product.color : '-';
                     
                     const productDiv = document.createElement('div');
                     productDiv.className = 'product-item';
@@ -390,7 +393,7 @@
                     
                     productDiv.innerHTML = `
                         <div class="product-name">${product.name}</div>
-                        <div class="product-info">${product.category || ''} | Size: ${product.size || 'N/A'} | Stock: ${currentQty}</div>
+                        <div class="product-info">${product.category || ''} | Size: ${product.size || 'N/A'} | Color: ${color} | Stock: ${currentQty}</div>
                         <div class="product-price">LKR ${Number(product.price).toFixed(2)}</div>
                     `;
                     productGrid.appendChild(productDiv);
