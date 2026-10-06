@@ -3,16 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DCK Footwear - Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
+    <title>DCK Footwear - Inventory</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root {
-            /* Dark Theme Colors (Default) */
             --bg-color: #0b0d14;
             --card-bg: rgba(255, 255, 255, 0.04);
             --card-border: rgba(255, 255, 255, 0.1);
@@ -26,10 +20,10 @@
             --input-bg: rgba(255, 255, 255, 0.05);
             --option-bg: #1e293b;
             --option-text: #ffffff;
+            --danger-color: #ef4444;
         }
 
         [data-theme="light"] {
-            /* Light Theme Colors */
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --card-border: #e2e8f0;
@@ -43,6 +37,7 @@
             --input-bg: #f1f5f9;
             --option-bg: #ffffff;
             --option-text: #0f172a;
+            --danger-color: #dc2626;
         }
 
         * {
@@ -87,9 +82,7 @@
             text-transform: uppercase;
         }
 
-        .nav-links {
-            list-style: none;
-        }
+        .nav-links { list-style: none; }
 
         .nav-links li a {
             display: block;
@@ -173,62 +166,184 @@
             font-size: 13px;
         }
 
-        .stats-grid {
+        .container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            grid-template-columns: 420px 1fr;
+            gap: 25px;
+            align-items: start;
         }
 
-        .stat-card {
+        .card {
             background: var(--card-bg);
             padding: 25px;
             border-radius: 16px;
             border: 1px solid var(--card-border);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 10px;
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .form-control, .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .form-select option {
+            background-color: var(--option-bg);
+            color: var(--option-text);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 8px var(--glow-color);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: #ffffff;
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        .table-container { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 13px;
+        }
+
+        th {
+            color: var(--text-sub);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        code {
+            background: rgba(0, 136, 255, 0.1);
+            color: var(--primary-blue);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        #printableArea, #printInventoryReport {
+            display: none;
+        }
+
+        .print-grid {
+            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
         }
 
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-sub);
-            font-weight: 500;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        .chart-container {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            height: 400px;
+        .tag-card {
+            background: #fff;
+            color: #000;
+            border: 1px dashed #000;
+            padding: 10px;
+            text-align: center;
+            width: 280px;
+            box-sizing: border-box;
+            page-break-inside: avoid;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
         }
 
-        canvas {
-            max-height: 350px;
+        .tag-card svg {
             width: 100% !important;
+            height: auto !important;
+            max-height: 80px;
+            margin-top: 5px;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printableArea, #printableArea * {
+                visibility: visible;
+            }
+            #printableArea {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-
     <aside class="sidebar">
         <div>
             <div class="sidebar-brand">
                 <h2>DCK Footwear</h2>
             </div>
             <ul class="nav-links">
-                <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
                 <li><a href="sales.html">Sales & Billing</a></li>
-                <li><a href="inventory.html">Inventory</a></li>
+                <li><a href="inventory.html" class="active">Inventory</a></li>
                 <li><a href="Customer.html">Customers</a></li>
                 <li><a href="chart.html">Charts</a></li>
                 <li><a href="settings.html">Settings</a></li>
@@ -241,9 +356,9 @@
 
     <main class="main-content">
         <div class="top-header">
-            <h1>Dashboard Overview</h1>
+            <h1>Inventory Management</h1>
             <div class="user-profile">
-                <button class="theme-btn" onclick="toggleTheme()">🌓 Theme</button>
+                <button class="theme-btn" id="themeToggleBtn">🌓 Theme</button>
                 <div class="welcome-badge">
                     <div class="avatar">M</div>
                     <span>Welcome, M4K</span>
@@ -251,30 +366,113 @@
             </div>
         </div>
 
-        <section class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-label">Total Sales (Today)</span>
-                <span class="stat-value" id="totalSales">LKR 0</span>
+        <div class="container">
+            <div class="card">
+                <h2 class="section-title">Add / Update Product</h2>
+                <div class="form-group">
+                    <label>Barcode / Item Code</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="barcodeInput" class="form-control" placeholder="Scan or Type Barcode..." autofocus>
+                        <button class="btn btn-secondary" id="autoBarcodeBtn" type="button">Auto</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" id="itemName" class="form-control" placeholder="e.g. Formal Shoe">
+                </div>
+                <div class="form-group">
+                    <label>Product Category</label>
+                    <select id="productCategory" class="form-select">
+                        <option value="Shoe">Shoe</option>
+                        <option value="Slipper">Slipper</option>
+                        <option value="Umbrella">Umbrella</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Target Gender</label>
+                    <select id="targetGender" class="form-select">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Unisex">Unisex</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Color</label>
+                    <input type="text" id="itemColor" class="form-control" placeholder="e.g. Black / Brown / Red">
+                </div>
+                <div class="form-group">
+                    <label>Size</label>
+                    <input type="text" id="itemSize" class="form-control" placeholder="e.g. 7 | 8 | 9">
+                </div>
+                <div class="form-group">
+                    <label>Price (LKR)</label>
+                    <input type="number" id="itemPrice" class="form-control" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Stock Quantity (Pieces)</label>
+                    <input type="number" id="itemStock" class="form-control" placeholder="0" min="0">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="saveProductBtn" type="button">Save Product</button>
+                </div>
             </div>
-            <div class="stat-card">
-                <span class="stat-label">Total Orders</span>
-                <span class="stat-value" id="totalOrders">0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Items Low in Stock</span>
-                <span class="stat-value" id="lowStockItems">0</span>
-            </div>
-        </section>
 
-        <section class="chart-container">
-            <canvas id="salesChart"></canvas>
-        </section>
+            <div class="card table-container">
+                <div class="section-title">
+                    <span>Stock Inventory</span>
+                    <button class="btn btn-secondary" onclick="printStockReport()">🖨️ Print Stock</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Gender</th>
+                            <th>Color</th>
+                            <th>Size</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTable"></tbody>
+                </table>
+            </div>
+        </div>
     </main>
 
-    <script>
-        let salesChart;
+    <!-- Tag Printing Area -->
+    <div id="printableArea">
+        <div id="printGrid" class="print-grid"></div>
+    </div>
 
-        // Firebase Configuration
+    <!-- Inventory Report Printing Area -->
+    <div id="printInventoryReport">
+        <h2 style="text-align: center; margin-bottom: 5px;">DCK FOOTWEAR - STOCK INVENTORY REPORT</h2>
+        <hr style="margin-bottom: 15px;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Barcode</th>
+                    <th>Item Name</th>
+                    <th>Category</th>
+                    <th>Gender</th>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Price (LKR)</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody id="reportTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- Firebase SDK v10 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
             authDomain: "pos-78811.firebaseapp.com",
@@ -286,130 +484,214 @@
             measurementId: "G-2S3D8JEGQH"
         };
 
-        // Initialize Firebase & Firestore
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const inventoryRef = ref(db, 'inventory');
+        let globalInventory = {};
 
-        window.onload = () => {
+        document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+            document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
+            document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
 
-            initChart();
-            listenToRealtimeData();
-        };
+            const barcodeInput = document.getElementById('barcodeInput');
+            barcodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const barcode = barcodeInput.value.trim();
+                    if (barcode) {
+                        populateProductDetails(barcode);
+                    }
+                }
+            });
+        });
 
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-
-            updateChartTheme();
         }
 
-        function initChart() {
-            const ctx = document.getElementById('salesChart').getContext('2d');
-            const subColor = getComputedStyle(document.documentElement).getPropertyValue('--text-sub').trim();
-
-            salesChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Weekly Sales (LKR)',
-                        data: [0, 0, 0, 0, 0, 0, 0],
-                        borderColor: '#0088ff',
-                        backgroundColor: 'rgba(0, 136, 255, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: subColor }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: { color: subColor },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                        }
-                    }
-                }
-            });
+        function generateAutoBarcode() {
+            const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('barcodeInput').value = autoCode;
         }
 
-        function listenToRealtimeData() {
-            // Realtime Listener for Receipts Collection
-            db.collection("receipts").onSnapshot((snapshot) => {
-                let todayTotalSales = 0;
-                let totalOrdersCount = snapshot.size;
-                let weeklyTotals = [0, 0, 0, 0, 0, 0, 0];
+        function saveProduct() {
+            const barcode = document.getElementById('barcodeInput').value.trim();
+            const name = document.getElementById('itemName').value.trim();
+            const category = document.getElementById('productCategory').value;
+            const gender = document.getElementById('targetGender').value;
+            const color = document.getElementById('itemColor').value.trim() || '-';
+            const size = document.getElementById('itemSize').value.trim();
+            const price = parseFloat(document.getElementById('itemPrice').value);
+            const stock = parseInt(document.getElementById('itemStock').value);
 
-                const todayDateStr = new Date().toDateString();
+            if (!barcode || !name || !size || isNaN(price) || isNaN(stock)) {
+                alert("Please fill all fields!");
+                return;
+            }
 
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const receiptTotal = Number(data.total || 0);
-                    const receiptDateStr = data.date || "";
+            const itemData = { barcode, name, category, gender, color, size, price, stock };
 
-                    if (receiptDateStr) {
-                        const parsedDate = new Date(receiptDateStr);
-
-                        if (!isNaN(parsedDate)) {
-                            // Calculate Today's Sales
-                            if (parsedDate.toDateString() === todayDateStr) {
-                                todayTotalSales += receiptTotal;
-                            }
-
-                            // Map to Weekly Chart (Mon = 0, Sun = 6)
-                            let dayIdx = parsedDate.getDay();
-                            let adjustedDay = dayIdx === 0 ? 6 : dayIdx - 1;
-                            weeklyTotals[adjustedDay] += receiptTotal;
-                        }
-                    }
+            set(ref(db, 'inventory/' + barcode), itemData)
+                .then(() => {
+                    alert("Product saved successfully!");
+                    clearForm();
+                })
+                .catch((error) => {
+                    alert("Error saving product: " + error.message);
                 });
-
-                // Update UI Elements
-                document.getElementById('totalSales').innerText = `LKR ${todayTotalSales.toLocaleString()}`;
-                document.getElementById('totalOrders').innerText = totalOrdersCount;
-
-                if (salesChart) {
-                    salesChart.data.datasets[0].data = weeklyTotals;
-                    salesChart.update();
-                }
-            }, (error) => {
-                console.error("Firestore Error: ", error);
-            });
-
-            // Realtime Listener for Low Stock Items
-            db.collection("inventory").onSnapshot((snapshot) => {
-                let lowStockCount = 0;
-                snapshot.forEach((doc) => {
-                    const item = doc.data();
-                    if (Number(item.qty || 0) < 5) {
-                        lowStockCount++;
-                    }
-                });
-                document.getElementById('lowStockItems').innerText = lowStockCount;
-            }, (err) => {
-                console.log("Inventory listener ready");
-            });
         }
 
-        function updateChartTheme() {
-            if (salesChart) {
-                const subColor = getComputedStyle(document.documentElement).getPropertyValue('--text-sub').trim();
-                salesChart.options.scales.x.ticks.color = subColor;
-                salesChart.options.scales.y.ticks.color = subColor;
-                salesChart.update();
+        function clearForm() {
+            document.getElementById('barcodeInput').value = '';
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemColor').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemStock').value = '';
+            document.getElementById('itemSize').value = '';
+        }
+
+        function populateProductDetails(barcode) {
+            const item = globalInventory[barcode];
+            if (item) {
+                document.getElementById('barcodeInput').value = item.barcode || barcode;
+                document.getElementById('itemName').value = item.name || '';
+                document.getElementById('productCategory').value = item.category || 'Shoe';
+                document.getElementById('targetGender').value = item.gender || 'Male';
+                document.getElementById('itemColor').value = item.color || '';
+                document.getElementById('itemSize').value = item.size || '';
+                document.getElementById('itemPrice').value = item.price !== undefined ? item.price : '';
+                document.getElementById('itemStock').value = item.stock !== undefined ? item.stock : '';
             }
         }
+
+        window.deleteProduct = function(key) {
+            if (confirm(`Delete '${key}' item?`)) {
+                remove(ref(db, 'inventory/' + key))
+                    .then(() => alert("Item deleted!"))
+                    .catch((error) => alert("Error: " + error.message));
+            }
+        };
+
+        window.printItemBarcode = function(barcode, name, category, gender, color, size, price, stock) {
+            const printGrid = document.getElementById('printGrid');
+            printGrid.innerHTML = '';
+            let count = parseInt(stock) || 1;
+            if (count > 100) count = 100;
+
+            const colorAbbr = (color && color !== '-') ? color.substring(0, 3).toUpperCase() : '';
+
+            for (let i = 0; i < count; i++) {
+                const tagDiv = document.createElement('div');
+                tagDiv.className = 'tag-card';
+                const svgId = `barcode_svg_${i}`;
+
+                tagDiv.innerHTML = `
+                    <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 2px;">DCK FOOTWEAR</h3>
+                    <p style="font-size: 14px; font-weight: bold; margin-bottom: 2px;">${name}</p>
+                    <p style="font-size: 12px; color: #000; margin-bottom: 2px;">${category} | ${gender} | ${colorAbbr}</p>
+                    <p style="font-size: 12px; font-weight: bold; margin-bottom: 2px;">Size: ${size}</p>
+                    <p style="font-size: 14px; font-weight: bold; margin-bottom: 2px;">LKR ${Number(price).toFixed(2)}</p>
+                    <svg id="${svgId}"></svg>
+                `;
+                printGrid.appendChild(tagDiv);
+
+                JsBarcode(`#${svgId}`, barcode, {
+                    format: "CODE128",
+                    width: 2.5,
+                    height: 65,
+                    displayValue: true,
+                    fontSize: 18,
+                    fontOptions: "bold",
+                    margin: 5
+                });
+            }
+
+            document.getElementById('printableArea').style.display = 'block';
+            window.print();
+            document.getElementById('printableArea').style.display = 'none';
+        };
+
+        window.printStockReport = function() {
+            const reportBody = document.getElementById('reportTableBody');
+            reportBody.innerHTML = '';
+
+            Object.keys(globalInventory).forEach((key) => {
+                const item = globalInventory[key];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.barcode || key}</td>
+                    <td>${item.name || 'undefined'}</td>
+                    <td>${item.category || 'undefined'}</td>
+                    <td>${item.gender || 'undefined'}</td>
+                    <td>${item.color || '-'}</td>
+                    <td>${item.size || 'undefined'}</td>
+                    <td>${item.price !== undefined ? Number(item.price).toFixed(2) : '0.00'}</td>
+                    <td>${item.stock !== undefined ? item.stock : '0'}</td>
+                `;
+                reportBody.appendChild(tr);
+            });
+
+            document.getElementById('printInventoryReport').style.display = 'block';
+            window.print();
+            document.getElementById('printInventoryReport').style.display = 'none';
+        };
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('inventoryTable');
+            tableBody.innerHTML = '';
+
+            if (!data) {
+                tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-sub);">No items found.</td></tr>`;
+                return;
+            }
+
+            const keys = Object.keys(data);
+            if (keys.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-sub);">No items found.</td></tr>`;
+                return;
+            }
+
+            keys.forEach((key) => {
+                const item = data[key];
+                const tr = document.createElement('tr');
+                const displayBarcode = item.barcode || key;
+                const displayName = item.name || 'undefined';
+                const displayCategory = item.category || 'undefined';
+                const displayGender = item.targetGender || item.gender || 'undefined';
+                const displayColor = item.itemColor || item.color || '-';
+                const displaySize = item.itemSize || item.size || 'undefined';
+                const displayPrice = item.itemPrice !== undefined ? Number(item.itemPrice).toFixed(2) : (item.price !== undefined ? Number(item.price).toFixed(2) : '0.00');
+                const displayStock = item.itemStock !== undefined ? item.itemStock : (item.stock !== undefined ? item.stock : 0);
+
+                tr.innerHTML = `
+                    <td><code>${displayBarcode}</code></td>
+                    <td>${displayName}</td>
+                    <td>${displayCategory}</td>
+                    <td>${displayGender}</td>
+                    <td>${displayColor}</td>
+                    <td>${displaySize}</td>
+                    <td>${displayPrice}</td>
+                    <td>${displayStock}</td>
+                    <td style="display: flex; gap: 5px;">
+                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${displayBarcode}', '${displayName}', '${displayCategory}', '${displayGender}', '${displayColor}', '${displaySize}', ${item.itemPrice || item.price || 0}, ${displayStock})">Print Tag</button>
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteProduct('${key}')">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        onValue(inventoryRef, (snapshot) => {
+            const data = snapshot.val();
+            globalInventory = data || {};
+            renderTable(globalInventory);
+        });
     </script>
 </body>
 </html>
