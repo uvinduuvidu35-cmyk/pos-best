@@ -301,10 +301,10 @@
             background: #fff;
             color: #000;
             border: 1px dashed #000;
-            padding: 10px;
+            padding: 12px;
             text-align: center;
-            width: 250px;
-            height: 140px;
+            width: 270px;
+            height: 160px;
             box-sizing: border-box;
             page-break-inside: avoid;
             display: flex;
@@ -587,21 +587,21 @@
                 const sequentialBarcode = `${barcode}-${i + 1}`;
 
                 tagDiv.innerHTML = `
-                    <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">DCK FOOTWEAR</h3>
-                    <p style="font-size: 14px; font-weight: bold; margin-bottom: 2px;">${name}</p>
-                    <p style="font-size: 12px; color: #000; margin-bottom: 4px;">${category} | ${gender} | ${colorAbbr}</p>
-                    <p style="font-size: 13px; font-weight: bold; margin-bottom: 4px;">Size: ${size}</p>
-                    <p style="font-size: 14px; font-weight: bold; margin-bottom: 6px;">LKR ${Number(price).toFixed(2)}</p>
+                    <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 6px;">DCK FOOTWEAR</h3>
+                    <p style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">${name}</p>
+                    <p style="font-size: 14px; color: #000; margin-bottom: 6px;">${category} | ${gender} | ${colorAbbr}</p>
+                    <p style="font-size: 14px; font-weight: bold; margin-bottom: 6px;">Size: ${size}</p>
+                    <p style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">LKR ${Number(price).toFixed(2)}</p>
                     <svg id="${svgId}"></svg>
                 `;
                 printGrid.appendChild(tagDiv);
 
                 JsBarcode(`#${svgId}`, sequentialBarcode, {
                     format: "CODE128",
-                    width: 2.5,
-                    height: 50,
+                    width: 3.5,
+                    height: 60,
                     displayValue: true,
-                    fontSize: 14,
+                    fontSize: 16,
                     margin: 0
                 });
             }
