@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DCK Footwear - Sales & Billing</title>
+    <title>DCK Footwear - Inventory</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root {
             --bg-color: #0b0d14;
@@ -19,6 +20,7 @@
             --input-bg: rgba(255, 255, 255, 0.05);
             --option-bg: #1e293b;
             --option-text: #ffffff;
+            --danger-color: #ef4444;
         }
 
         [data-theme="light"] {
@@ -35,6 +37,7 @@
             --input-bg: #f1f5f9;
             --option-bg: #ffffff;
             --option-text: #0f172a;
+            --danger-color: #dc2626;
         }
 
         * {
@@ -79,9 +82,7 @@
             text-transform: uppercase;
         }
 
-        .nav-links {
-            list-style: none;
-        }
+        .nav-links { list-style: none; }
 
         .nav-links li a {
             display: block;
@@ -165,31 +166,18 @@
             font-size: 13px;
         }
 
-        .pos-container {
-            display: flex;
-            gap: 20px;
-            width: 100%;
-            min-height: calc(100vh - 120px);
+        .container {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 25px;
+            align-items: start;
         }
 
-        .products-section {
-            flex: 2;
+        .card {
             background: var(--card-bg);
             padding: 25px;
             border-radius: 16px;
             border: 1px solid var(--card-border);
-            overflow-y: auto;
-        }
-
-        .cart-section {
-            flex: 1;
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
         .section-title {
@@ -199,9 +187,22 @@
             color: var(--text-main);
             border-bottom: 1px solid var(--card-border);
             padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .barcode-input {
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .form-control, .form-select {
             width: 100%;
             padding: 10px 14px;
             background: var(--input-bg);
@@ -209,104 +210,133 @@
             border-radius: 8px;
             color: var(--text-main);
             font-size: 14px;
-            margin-bottom: 25px;
             outline: none;
         }
 
-        .barcode-input:focus {
+        .form-select option {
+            background-color: var(--option-bg);
+            color: var(--option-text);
+        }
+
+        .form-control:focus, .form-select:focus {
             border-color: var(--primary-blue);
             box-shadow: 0 0 8px var(--glow-color);
         }
 
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 15px;
-        }
-
-        .product-item {
-            background: var(--input-bg);
-            border: 1px solid var(--card-border);
-            padding: 15px;
-            border-radius: 12px;
-            cursor: pointer;
-            text-align: center;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-
-        .product-item:hover {
-            transform: translateY(-2px);
-            border-color: var(--primary-blue);
-        }
-
-        .product-name {
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .product-info {
-            font-size: 12px;
-            color: var(--text-sub);
-            margin-bottom: 5px;
-        }
-
-        .product-price {
-            color: var(--primary-blue);
-            font-weight: 700;
-        }
-
-        .cart-items {
-            list-style: none;
-            margin-bottom: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .cart-item {
+        .btn-group {
             display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--card-border);
-            font-size: 14px;
+            gap: 10px;
+            margin-top: 20px;
         }
 
-        .cart-total {
-            font-size: 22px;
-            font-weight: 700;
-            text-align: right;
-            margin-bottom: 20px;
-            color: var(--primary-blue);
-        }
-
-        .checkout-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        .btn {
+            padding: 10px 16px;
             border: none;
             border-radius: 8px;
-            color: #ffffff;
-            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             text-transform: uppercase;
+            font-size: 12px;
         }
 
-        .checkout-btn:hover {
-            opacity: 0.9;
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: #ffffff;
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        .table-container { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 13px;
+        }
+
+        th {
+            color: var(--text-sub);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        code {
+            background: rgba(0, 136, 255, 0.1);
+            color: var(--primary-blue);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        #printableArea, #printInventoryReport {
+            display: none;
+            background: #fff;
+            color: #000;
+            padding: 15px;
+            font-family: Arial, sans-serif;
+        }
+
+        .print-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .tag-card {
+            background: #fff;
+            color: #000;
+            border: 1px dashed #ccc;
+            padding: 10px;
+            text-align: center;
+            width: 220px;
+            box-sizing: border-box;
+            page-break-inside: avoid;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printableArea, #printableArea *, #printInventoryReport, #printInventoryReport * {
+                visibility: visible;
+            }
+            #printableArea, #printInventoryReport {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-
     <aside class="sidebar">
         <div>
             <div class="sidebar-brand">
                 <h2>DCK Footwear</h2>
             </div>
             <ul class="nav-links">
-                <li><a href="dashbord.html">Dashboard</a></li>
-                <li><a href="sales.html" class="active">Sales & Billing</a></li>
-                <li><a href="inventory.html">Inventory</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="sales.html">Sales & Billing</a></li>
+                <li><a href="inventory.html" class="active">Inventory</a></li>
                 <li><a href="Customer.html">Customers</a></li>
                 <li><a href="chart.html">Charts</a></li>
                 <li><a href="settings.html">Settings</a></li>
@@ -319,9 +349,9 @@
 
     <main class="main-content">
         <div class="top-header">
-            <h1>Sales & Billing</h1>
+            <h1>Inventory Management</h1>
             <div class="user-profile">
-                <button class="theme-btn" onclick="toggleTheme()">🌓 Theme</button>
+                <button class="theme-btn" id="themeToggleBtn">🌓 Theme</button>
                 <div class="welcome-badge">
                     <div class="avatar">M</div>
                     <span>Welcome, M4K</span>
@@ -329,32 +359,93 @@
             </div>
         </div>
 
-        <section class="pos-container">
-            <div class="products-section">
-                <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan barcode here to add item..." autofocus>
-                
-                <h2 class="section-title">Products</h2>
-                <div class="product-grid" id="productGrid">
-                    <p style="color: var(--text-sub);">Loading products...</p>
+        <div class="container">
+            <div class="card">
+                <h2 class="section-title">Add / Update Product</h2>
+                <div class="form-group">
+                    <label for="barcodeInput">Barcode / Item Code</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="barcodeInput" class="form-control" placeholder="Scan or Type Barcode..." autofocus>
+                        <button class="btn btn-secondary" id="autoBarcodeBtn" type="button">Auto</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="itemName">Item Name</label>
+                    <input type="text" id="itemName" class="form-control" placeholder="e.g. Formal Shoe">
+                </div>
+                <div class="form-group">
+                    <label for="productCategory">Product Category</label>
+                    <select id="productCategory" class="form-select">
+                        <option value="Shoe">Shoe</option>
+                        <option value="Slipper">Slipper</option>
+                        <option value="Umbrella">Umbrella</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="targetGender">Target Gender</label>
+                    <select id="targetGender" class="form-select">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Unisex">Unisex</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemColor">Color</label>
+                    <input type="text" id="itemColor" class="form-control" placeholder="e.g. Black / Brown / Red">
+                </div>
+                <div class="form-group">
+                    <label for="itemSize">Size</label>
+                    <input type="text" id="itemSize" class="form-control" placeholder="e.g. 7 | 8 | 9">
+                </div>
+                <div class="form-group">
+                    <label for="itemPrice">Price (LKR)</label>
+                    <input type="number" id="itemPrice" class="form-control" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="itemStock">Stock Quantity (Pieces)</label>
+                    <input type="number" id="itemStock" class="form-control" placeholder="0" min="0">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="saveProductBtn" type="button">Save Product</button>
                 </div>
             </div>
 
-            <div class="cart-section">
-                <div>
-                    <h2 class="section-title">Current Order</h2>
-                    <ul class="cart-items" id="cartItems"></ul>
+            <div class="card table-container">
+                <div class="section-title">
+                    <span>Stock Inventory</span>
+                    <button class="btn btn-secondary" onclick="printStockReport()">🖨️ Print Stock</button>
                 </div>
-                <div>
-                    <div class="cart-total" id="cartTotal">Total: LKR 0.00</div>
-                    <button class="checkout-btn" onclick="processCheckout()">Process Receipt</button>
-                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Gender</th>
+                            <th>Color</th>
+                            <th>Size</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTable"></tbody>
+                </table>
             </div>
-        </section>
+        </div>
     </main>
+
+    <div id="printableArea">
+        <div id="printGrid" class="print-grid"></div>
+    </div>
+
+    <div id="printInventoryReport">
+        <div id="reportPrintGrid" class="print-grid"></div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, push, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
@@ -368,119 +459,29 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        const db = getDatabase(app);
+        const inventoryRef = ref(db, 'inventory');
+        let globalInventory = {};
 
-        let localProducts = {}; 
-
-        const inventoryRef = ref(database, 'inventory');
-        onValue(inventoryRef, (snapshot) => {
-            const productGrid = document.getElementById('productGrid');
-            productGrid.innerHTML = '';
-
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                localProducts = data;
-                Object.keys(data).forEach(key => {
-                    const product = data[key];
-                    const currentQty = product.quantity !== undefined ? product.quantity : (product.qty !== undefined ? product.qty : 0);
-                    
-                    const productDiv = document.createElement('div');
-                    productDiv.className = 'product-item';
-                    productDiv.onclick = () => window.addToCart(key, product.name, product.price, currentQty);
-                    
-                    productDiv.innerHTML = `
-                        <div class="product-name">${product.name}</div>
-                        <div class="product-info">${product.category || ''} | Size: ${product.size || 'N/A'} | Stock: ${currentQty}</div>
-                        <div class="product-price">LKR ${Number(product.price).toFixed(2)}</div>
-                    `;
-                    productGrid.appendChild(productDiv);
-                });
-            } else {
-                productGrid.innerHTML = '<p style="color: var(--text-sub);">No products found in inventory.</p>';
-            }
-        }, (error) => {
-            console.error("Firebase read error:", error);
-            document.getElementById('productGrid').innerHTML = '<p style="color: #ef4444;">Failed to load products. Check Firebase Rules/Connection.</p>';
-        });
-
-        window.processCheckout = async function() {
-            if (cart.length === 0) {
-                alert("Cart is empty!");
-                return;
-            }
-
-            try {
-                for (let item of cart) {
-                    const productInDb = localProducts[item.key];
-                    const availableQty = productInDb ? (productInDb.quantity !== undefined ? productInDb.quantity : (productInDb.qty !== undefined ? productInDb.qty : 0)) : 0;
-                    
-                    if (item.qty > availableQty) {
-                        alert(`Not enough stock for ${item.name}! Available: ${availableQty}`);
-                        return;
-                    }
-                }
-
-                const salesRef = ref(database, 'sales');
-                const newSaleRef = push(salesRef);
-                await set(newSaleRef, {
-                    items: cart,
-                    totalAmount: total,
-                    timestamp: new Date().toISOString(),
-                    date: new Date().toLocaleDateString()
-                });
-
-                for (let item of cart) {
-                    const productInDb = localProducts[item.key];
-                    const currentQty = productInDb ? (productInDb.quantity !== undefined ? productInDb.quantity : (productInDb.qty !== undefined ? productInDb.qty : 0)) : 0;
-                    const newQty = Math.max(0, currentQty - item.qty);
-
-                    const productRef = ref(database, `inventory/${item.key}`);
-                    if (productInDb && productInDb.quantity !== undefined) {
-                        await update(productRef, { quantity: newQty });
-                    } else {
-                        await update(productRef, { qty: newQty });
-                    }
-                }
-
-                localStorage.setItem('receiptItems', JSON.stringify(cart));
-                localStorage.setItem('receiptTotal', total);
-
-                alert("Transaction successful & Inventory stock updated!");
-                cart = [];
-                total = 0;
-                updateCartUI();
-
-                window.location.href = 'receipt.html';
-            } catch (error) {
-                console.error("Error processing transaction:", error);
-                alert("Failed to save transaction: " + error.message);
-            }
-        };
-
-        window.handleBarcode = function(barcode) {
-            let found = false;
-
-            for (let key in localProducts) {
-                if (localProducts[key].barcode && localProducts[key].barcode.toString() === barcode) {
-                    const product = localProducts[key];
-                    const stock = product.quantity !== undefined ? product.quantity : (product.qty !== undefined ? product.qty : 0);
-                    window.addToCart(key, product.name, product.price, stock);
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                alert("Product not found for barcode: " + barcode);
-            }
-        };
-    </script>
-
-    <script>
-        window.onload = () => {
+        document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
-        };
+
+            document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+            document.getElementById('autoBarcodeBtn').addEventListener('click', generateAutoBarcode);
+            document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
+
+            const barcodeInput = document.getElementById('barcodeInput');
+            barcodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const barcode = barcodeInput.value.trim();
+                    if (barcode) {
+                        populateProductDetails(barcode);
+                    }
+                }
+            });
+        });
 
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -489,58 +490,183 @@
             localStorage.setItem('theme', newTheme);
         }
 
-        const barcodeInput = document.getElementById('barcodeInput');
-        let cart = [];
-        let total = 0;
+        function generateAutoBarcode() {
+            const autoCode = "DCK" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('barcodeInput').value = autoCode;
+        }
 
-        barcodeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const barcode = barcodeInput.value.trim();
-                if (barcode && window.handleBarcode) {
-                    window.handleBarcode(barcode);
-                }
-                barcodeInput.value = '';
-            }
-        });
+        function saveProduct() {
+            const barcode = document.getElementById('barcodeInput').value.trim();
+            const name = document.getElementById('itemName').value.trim();
+            const category = document.getElementById('productCategory').value;
+            const gender = document.getElementById('targetGender').value;
+            const color = document.getElementById('itemColor').value.trim() || '-';
+            const size = document.getElementById('itemSize').value.trim();
+            const price = parseFloat(document.getElementById('itemPrice').value);
+            const stock = parseInt(document.getElementById('itemStock').value);
 
-        window.addToCart = function(key, name, price, stock) {
-            const numPrice = Number(price);
-            
-            const existingItemIndex = cart.findIndex(item => item.key === key);
-
-            if (existingItemIndex > -1) {
-                if (cart[existingItemIndex].qty + 1 > stock) {
-                    alert(`Cannot add more. Exceeds available stock (${stock})!`);
-                    return;
-                }
-                cart[existingItemIndex].qty += 1;
-            } else {
-                if (stock < 1) {
-                    alert("This product is out of stock!");
-                    return;
-                }
-                cart.push({ key, name, price: numPrice, qty: 1 });
+            if (!barcode || !name || !size || isNaN(price) || isNaN(stock)) {
+                alert("කරුණාකර සියලු විස්තර (Barcode, Name, Size, Price, Stock) නිවැරදිව ඇතුළත් කරන්න!");
+                return;
             }
 
-            total += numPrice;
-            updateCartUI();
+            const itemData = { barcode, name, category, gender, color, size, price, stock };
+
+            set(ref(db, 'inventory/' + barcode), itemData)
+                .then(() => {
+                    alert("Product එක සාර්ථකව Save වුණා!");
+                    clearForm();
+                })
+                .catch((error) => {
+                    alert("දත්ත සුරැකීමට අපොහොසත විය: " + error.message);
+                });
+        }
+
+        function clearForm() {
+            document.getElementById('barcodeInput').value = '';
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemColor').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemStock').value = '';
+            document.getElementById('itemSize').value = '';
+        }
+
+        function populateProductDetails(barcode) {
+            const item = globalInventory[barcode];
+            if (item) {
+                document.getElementById('barcodeInput').value = item.barcode || barcode;
+                document.getElementById('itemName').value = item.name || '';
+                document.getElementById('productCategory').value = item.category || 'Shoe';
+                document.getElementById('targetGender').value = item.gender || 'Male';
+                document.getElementById('itemColor').value = item.color || '';
+                document.getElementById('itemSize').value = item.size || '';
+                document.getElementById('itemPrice').value = item.price !== undefined ? item.price : '';
+                document.getElementById('itemStock').value = item.stock !== undefined ? item.stock : '';
+            }
+        }
+
+        window.deleteProduct = function(key) {
+            if (confirm(`ඔබට ස්ථිරවම '${key}' දත්ත පේළිය ඉවත් කිරීමට අවශ්‍යද?`)) {
+                remove(ref(db, 'inventory/' + key))
+                    .then(() => alert("දත්ත සාර්ථකව ඉවත් කළා!"))
+                    .catch((error) => alert("ඉවත් කිරීමට නොහැකි විය: " + error.message));
+            }
         };
 
-        function updateCartUI() {
-            const cartItemsList = document.getElementById('cartItems');
-            const cartTotal = document.getElementById('cartTotal');
-            
-            cartItemsList.innerHTML = '';
-            cart.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'cart-item';
-                const itemTotal = item.price * item.qty;
-                li.innerHTML = `<span>${item.name} (x${item.qty})</span> <span>LKR ${itemTotal.toFixed(2)}</span>`;
-                cartItemsList.appendChild(li);
+        window.printItemBarcode = function(barcode, name, category, gender, color, size, price, stock) {
+            const printGrid = document.getElementById('printGrid');
+            printGrid.innerHTML = '';
+            let count = parseInt(stock) || 1;
+            if (count > 100) count = 100;
+
+            for (let i = 0; i < count; i++) {
+                const tagDiv = document.createElement('div');
+                tagDiv.className = 'tag-card';
+                const svgId = `barcode_svg_${i}`;
+                const sequentialBarcode = `${barcode}-${i + 1}`;
+
+                tagDiv.innerHTML = `
+                    <h3 style="font-size: 13px; margin-bottom: 2px;">DCK FOOTWEAR</h3>
+                    <p style="font-size: 11px; font-weight: bold; margin: 0;">${name}</p>
+                    <p style="font-size: 10px; color: #555; margin: 0;">${category} | ${gender} | ${color}</p>
+                    <p style="font-size: 10px; margin: 0;">Size: ${size}</p>
+                    <p style="font-size: 11px; margin: 2px 0; font-weight: bold;">LKR ${Number(price).toFixed(2)}</p>
+                    <svg id="${svgId}"></svg>
+                `;
+                printGrid.appendChild(tagDiv);
+
+                JsBarcode(`#${svgId}`, sequentialBarcode, {
+                    format: "CODE128",
+                    width: 1.3,
+                    height: 30,
+                    displayValue: true,
+                    fontSize: 9
+                });
+            }
+
+            document.getElementById('printableArea').style.display = 'block';
+            window.print();
+            document.getElementById('printableArea').style.display = 'none';
+        };
+
+        window.printStockReport = function() {
+            const reportPrintGrid = document.getElementById('reportPrintGrid');
+            reportPrintGrid.innerHTML = '';
+
+            Object.keys(globalInventory).forEach((key) => {
+                const item = globalInventory[key];
+                const tagDiv = document.createElement('div');
+                tagDiv.className = 'tag-card';
+                const svgId = `report_barcode_svg_${key}`;
+
+                tagDiv.innerHTML = `
+                    <h3 style="font-size: 13px; margin-bottom: 2px;">DCK FOOTWEAR</h3>
+                    <p style="font-size: 11px; font-weight: bold; margin: 0;">${item.name || ''}</p>
+                    <p style="font-size: 10px; color: #555; margin: 0;">${item.category || ''} | ${item.gender || ''} | ${item.color || '-'}</p>
+                    <p style="font-size: 10px; margin: 0;">Size: ${item.size || ''}</p>
+                    <p style="font-size: 11px; margin: 2px 0; font-weight: bold;">LKR ${Number(item.price).toFixed(2)}</p>
+                    <svg id="${svgId}"></svg>
+                `;
+                reportPrintGrid.appendChild(tagDiv);
+
+                JsBarcode(`#${svgId}`, item.barcode || key, {
+                    format: "CODE128",
+                    width: 1.3,
+                    height: 30,
+                    displayValue: true,
+                    fontSize: 9
+                });
             });
 
-            cartTotal.textContent = `Total: LKR ${total.toFixed(2)}`;
+            document.getElementById('printInventoryReport').style.display = 'block';
+            window.print();
+            document.getElementById('printInventoryReport').style.display = 'none';
+        };
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('inventoryTable');
+            tableBody.innerHTML = '';
+
+            if (!data || Object.keys(data).length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-sub);">භාණ්ඩ එකතු කර නොමැත.</td></tr>`;
+                return;
+            }
+
+            Object.keys(data).forEach((key) => {
+                const item = data[key];
+                const tr = document.createElement('tr');
+                const displayBarcode = item.barcode || key;
+                const displayName = item.name || 'undefined';
+                const displayCategory = item.category || 'undefined';
+                const displayGender = item.gender || 'undefined';
+                const displayColor = item.color || '-';
+                const displaySize = item.size || 'undefined';
+                const displayPrice = item.price !== undefined ? Number(item.price).toFixed(2) : '0.00';
+                const displayStock = item.stock !== undefined ? item.stock : 0;
+
+                tr.innerHTML = `
+                    <td><code>${displayBarcode}</code></td>
+                    <td>${displayName}</td>
+                    <td>${displayCategory}</td>
+                    <td>${displayGender}</td>
+                    <td>${displayColor}</td>
+                    <td>${displaySize}</td>
+                    <td>${displayPrice}</td>
+                    <td>${displayStock}</td>
+                    <td style="display: flex; gap: 5px;">
+                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="printItemBarcode('${displayBarcode}', '${displayName}', '${displayCategory}', '${displayGender}', '${displayColor}', '${displaySize}', ${item.price || 0}, ${displayStock})">Print Tag</button>
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteProduct('${key}')">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
         }
+
+        onValue(inventoryRef, (snapshot) => {
+            const data = snapshot.val();
+            globalInventory = data || {};
+            renderTable(globalInventory);
+        });
     </script>
 </body>
 </html>
