@@ -6,7 +6,7 @@
     <title>DCK Footwear - Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Firebase SDKs (Compat version to match Firestore) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
@@ -21,11 +21,7 @@
             --primary-blue: #0088ff;
             --gradient-start: #0284c7;
             --gradient-end: #0369a1;
-            --glow-color: rgba(0, 136, 255, 0.3);
             --sidebar-bg: #0f172a;
-            --input-bg: rgba(255, 255, 255, 0.05);
-            --option-bg: #1e293b;
-            --option-text: #ffffff;
         }
 
         [data-theme="light"] {
@@ -38,11 +34,7 @@
             --primary-blue: #0284c7;
             --gradient-start: #0284c7;
             --gradient-end: #0369a1;
-            --glow-color: rgba(2, 132, 199, 0.15);
             --sidebar-bg: #ffffff;
-            --input-bg: #f1f5f9;
-            --option-bg: #ffffff;
-            --option-text: #0f172a;
         }
 
         * {
@@ -121,156 +113,4 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .top-header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .welcome-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--primary-blue);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .theme-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            padding: 8px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-sub);
-            font-weight: 500;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        .chart-container {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            height: 400px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        canvas {
-            max-height: 350px;
-        }
-    </style>
-</head>
-<body>
-
-    <aside class="sidebar">
-        <div>
-            <div class="sidebar-brand">
-                <h2>DCK Footwear</h2>
-            </div>
-            <ul class="nav-links">
-                <li><a href="dashboard.html" class="active">Dashboard</a></li>
-                <li><a href="sales.html">Sales & Billing</a></li>
-                <li><a href="inventory.html">Inventory</a></li>
-                <li><a href="Customer.html">Customers</a></li>
-                <li><a href="chart.html">Charts</a></li>
-                <li><a href="settings.html">Settings</a></li>
-            </ul>
-        </div>
-        <ul class="nav-links">
-            <li><a href="index.html">Sign Out</a></li>
-        </ul>
-    </aside>
-
-    <main class="main-content">
-        <div class="top-header">
-            <h1>Dashboard Overview</h1>
-            <div class="user-profile">
-                <button class="theme-btn" onclick="toggleTheme()">🌓 Theme</button>
-                <div class="welcome-badge">
-                    <div class="avatar">M</div>
-                    <span>Welcome, M4K</span>
-                </div>
-            </div>
-        </div>
-
-        <section class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-label">Total Sales (Today)</span>
-                <span class="stat-value" id="totalSales">LKR 0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Total Orders</span>
-                <span class="stat-value" id="totalOrders">0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Items Low in Stock</span>
-                <span class="stat-value" id="lowStockItems">0</span>
-            </div>
-        </section>
-
-        <section class="chart-container">
-            <canvas id="salesChart"></canvas>
-        </section>
-    </main>
-
-    <script>
-        window.onload = () => {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-
+            margin-
