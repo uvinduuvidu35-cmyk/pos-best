@@ -6,6 +6,11 @@
     <title>DCK Footwear - Thermal Receipt</title>
     <!-- JsBarcode Library for Auto Barcode Generation -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --bg-color: #0b0d14;
@@ -244,7 +249,27 @@
     </div>
 
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtiYTOWxu00IxuVZkwqt-ohbE-tIfT33E",
+            authDomain: "pos-78811.firebaseapp.com",
+            databaseURL: "https://pos-78811-default-rtdb.firebaseio.com",
+            projectId: "pos-78811",
+            storageBucket: "pos-78811.firebasestorage.app",
+            messagingSenderId: "408721172867",
+            appId: "1:408721172867:web:301073f3f8b6deeaaa2eb6",
+            measurementId: "G-2S3D8JEGQH"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         let total = 0;
+        let transactionId = "";
+        let currentItems = [];
+        let customerPhone = "";
+        let customerName = "";
 
         window.onload = () => {
             // Set Date and Time
@@ -253,18 +278,22 @@
             document.getElementById('receiptTime').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
             // Load items from LocalStorage
-            const items = JSON.parse(localStorage.getItem('receiptItems')) || [
+            currentItems = JSON.parse(localStorage.getItem('receiptItems')) || [
                 { name: 'Shoe A', price: 2500.00 }
             ];
             total = parseFloat(localStorage.getItem('receiptTotal')) || 2500.00;
+            
+            // Load customer info if available in LocalStorage
+            customerPhone = localStorage.getItem('customerPhone') || "";
+            customerName = localStorage.getItem('customerName') || "";
 
             const receiptItemsList = document.getElementById('receiptItems');
             receiptItemsList.innerHTML = '';
 
-            items.forEach(item => {
+            currentItems.forEach(item => {
                 const li = document.createElement('li');
                 li.className = 'item-row';
-                li.innerHTML = `<span>${item.name}</span><span>${item.price.toFixed(2)}</span>`;
+                li.innerHTML = `<span>${item.name}</span><span>${Number(item.price).toFixed(2)}</span>`;
                 receiptItemsList.appendChild(li);
             });
 
@@ -272,7 +301,7 @@
             document.getElementById('receiptTotal').textContent = `LKR ${total.toFixed(2)}`;
 
             // Generate Barcode
-            const transactionId = "DCK" + Math.floor(100000 + Math.random() * 900000);
+            transactionId = "DCK" + Math.floor(100000 + Math.random() * 900000);
             JsBarcode("#barcode", transactionId, {
                 format: "CODE128",
                 width: 1.5,
@@ -304,18 +333,45 @@
             }
         }
 
-        function completeTransaction() {
+        async function completeTransaction() {
             const tendered = parseFloat(tenderedAmount.value) || 0;
             if (tendered < total) {
                 alert("Please enter a valid cash amount!");
                 return;
             }
 
-            // Drawer open simulation
-            alert("Opening cash drawer...");
+            // Construct Receipt Data for Firebase
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString();
+            const formattedTime = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-            // Print Receipt
-            window.print();
+            const itemNames = currentItems.map(item => item.name);
+
+            const receiptData = {
+                barcode: transactionId,
+                date: `${formattedDate} ${formattedTime}`,
+                total: total,
+                tendered: tendered,
+                change: tendered - total,
+                items: itemNames,
+                customerPhone: customerPhone,
+                customerName: customerName,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                // Save Receipt to Firestore Collection
+                await db.collection("receipts").add(receiptData);
+
+                // Drawer open simulation
+                alert("Receipt saved to database! Opening cash drawer...");
+
+                // Print Receipt
+                window.print();
+            } catch (error) {
+                console.error("Firebase Save Error:", error);
+                alert("Error saving transaction to database. Please check your network connection.");
+            }
         }
     </script>
 </body>
