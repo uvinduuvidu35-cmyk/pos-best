@@ -6,6 +6,7 @@
     <title>DCK Footwear - Sales & Billing</title>
     <style>
         :root {
+            /* Dark Theme Colors (Default) */
             --bg-color: #0b0d14;
             --card-bg: rgba(255, 255, 255, 0.04);
             --card-border: rgba(255, 255, 255, 0.1);
@@ -22,6 +23,7 @@
         }
 
         [data-theme="light"] {
+            /* Light Theme Colors */
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --card-border: #e2e8f0;
@@ -209,7 +211,7 @@
             border-radius: 8px;
             color: var(--text-main);
             font-size: 14px;
-            margin-bottom: 25px;
+            margin-bottom: 15px; /* Adjusting margin */
             outline: none;
         }
 
@@ -237,6 +239,13 @@
         .product-item:hover {
             transform: translateY(-2px);
             border-color: var(--primary-blue);
+        }
+
+        /* Highlighting style for searched items */
+        .product-item.highlight {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 10px var(--glow-color);
+            background: rgba(0, 136, 255, 0.1);
         }
 
         .product-name {
@@ -331,7 +340,9 @@
 
         <section class="pos-container">
             <div class="products-section">
+                <!-- Search Inputs -->
                 <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan barcode here to add item..." autofocus>
+                <input type="text" id="productNameSearch" class="barcode-input" placeholder="Search product by name...">
                 
                 <h2 class="section-title">Products</h2>
                 <div class="product-grid" id="productGrid">
@@ -372,7 +383,6 @@
 
         let localProducts = {}; 
 
-        // Helper function to extract correct Stock value regardless of field name
         function getStockValue(product) {
             if (product.stock !== undefined && product.stock !== null && product.stock !== '') return Number(product.stock);
             if (product.quantity !== undefined && product.quantity !== null && product.quantity !== '') return Number(product.quantity);
@@ -382,6 +392,13 @@
 
         const inventoryRef = ref(database, 'inventory');
         onValue(inventoryRef, (snapshot) => {
+            renderProducts(snapshot);
+        }, (error) => {
+            console.error("Firebase read error:", error);
+            document.getElementById('productGrid').innerHTML = '<p style="color: #ef4444;">Failed to load products.</p>';
+        });
+
+        function renderProducts(snapshot) {
             const productGrid = document.getElementById('productGrid');
             productGrid.innerHTML = '';
 
@@ -395,6 +412,7 @@
                     
                     const productDiv = document.createElement('div');
                     productDiv.className = 'product-item';
+                    productDiv.dataset.name = product.name.toLowerCase(); // For searching
                     productDiv.onclick = () => window.addToCart(key, product.name, product.price, currentQty);
                     
                     productDiv.innerHTML = `
@@ -407,10 +425,7 @@
             } else {
                 productGrid.innerHTML = '<p style="color: var(--text-sub);">No products found in inventory.</p>';
             }
-        }, (error) => {
-            console.error("Firebase read error:", error);
-            document.getElementById('productGrid').innerHTML = '<p style="color: #ef4444;">Failed to load products.</p>';
-        });
+        }
 
         window.processCheckout = async function() {
             if (cart.length === 0) {
@@ -445,7 +460,6 @@
 
                     const productRef = ref(database, `inventory/${item.key}`);
                     
-                    // Update whichever stock key exists in Database
                     if (productInDb.stock !== undefined) {
                         await update(productRef, { stock: newQty });
                     } else if (productInDb.quantity !== undefined) {
@@ -514,6 +528,34 @@
                 }
                 barcodeInput.value = '';
             }
+        });
+
+        // Search logic by product name
+        const productNameSearch = document.getElementById('productNameSearch');
+        productNameSearch.addEventListener('input', function() {
+            const filter = this.value.toLowerCase().trim();
+            const productGrid = document.getElementById('productGrid');
+            const products = productGrid.getElementsByClassName('product-item');
+            
+            let matchedProducts = [];
+            let otherProducts = [];
+
+            Array.from(products).forEach(product => {
+                const productName = product.dataset.name;
+
+                if (filter !== '' && productName.includes(filter)) {
+                    product.classList.add('highlight');
+                    matchedProducts.push(product);
+                } else {
+                    product.classList.remove('highlight');
+                    otherProducts.push(product);
+                }
+            });
+
+            // Reorder the DOM to put matched items at the top
+            productGrid.innerHTML = '';
+            matchedProducts.forEach(product => productGrid.appendChild(product));
+            otherProducts.forEach(product => productGrid.appendChild(product));
         });
 
         window.addToCart = function(key, name, price, stock) {
