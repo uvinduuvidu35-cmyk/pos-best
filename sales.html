@@ -6,7 +6,6 @@
     <title>DCK Footwear - Sales & Billing</title>
     <style>
         :root {
-            /* Dark Theme Colors (Default) */
             --bg-color: #0b0d14;
             --card-bg: rgba(255, 255, 255, 0.04);
             --card-border: rgba(255, 255, 255, 0.1);
@@ -23,7 +22,6 @@
         }
 
         [data-theme="light"] {
-            /* Light Theme Colors */
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --card-border: #e2e8f0;
@@ -374,6 +372,14 @@
 
         let localProducts = {}; 
 
+        // Helper function to extract correct Stock value regardless of field name
+        function getStockValue(product) {
+            if (product.stock !== undefined && product.stock !== null && product.stock !== '') return Number(product.stock);
+            if (product.quantity !== undefined && product.quantity !== null && product.quantity !== '') return Number(product.quantity);
+            if (product.qty !== undefined && product.qty !== null && product.qty !== '') return Number(product.qty);
+            return 0;
+        }
+
         const inventoryRef = ref(database, 'inventory');
         onValue(inventoryRef, (snapshot) => {
             const productGrid = document.getElementById('productGrid');
@@ -384,8 +390,8 @@
                 localProducts = data;
                 Object.keys(data).forEach(key => {
                     const product = data[key];
-                    const currentQty = product.quantity !== undefined ? product.quantity : (product.qty !== undefined ? product.qty : 0);
-                    const color = product.color !== undefined ? product.color : '-';
+                    const currentQty = getStockValue(product);
+                    const color = (product.color && product.color.trim() !== '' && product.color !== '-') ? product.color : 'N/A';
                     
                     const productDiv = document.createElement('div');
                     productDiv.className = 'product-item';
@@ -403,7 +409,7 @@
             }
         }, (error) => {
             console.error("Firebase read error:", error);
-            document.getElementById('productGrid').innerHTML = '<p style="color: #ef4444;">Failed to load products. Check Firebase Rules/Connection.</p>';
+            document.getElementById('productGrid').innerHTML = '<p style="color: #ef4444;">Failed to load products.</p>';
         });
 
         window.processCheckout = async function() {
@@ -415,7 +421,7 @@
             try {
                 for (let item of cart) {
                     const productInDb = localProducts[item.key];
-                    const availableQty = productInDb ? (productInDb.quantity !== undefined ? productInDb.quantity : (productInDb.qty !== undefined ? productInDb.qty : 0)) : 0;
+                    const availableQty = productInDb ? getStockValue(productInDb) : 0;
                     
                     if (item.qty > availableQty) {
                         alert(`Not enough stock for ${item.name}! Available: ${availableQty}`);
@@ -434,11 +440,15 @@
 
                 for (let item of cart) {
                     const productInDb = localProducts[item.key];
-                    const currentQty = productInDb ? (productInDb.quantity !== undefined ? productInDb.quantity : (productInDb.qty !== undefined ? productInDb.qty : 0)) : 0;
+                    const currentQty = productInDb ? getStockValue(productInDb) : 0;
                     const newQty = Math.max(0, currentQty - item.qty);
 
                     const productRef = ref(database, `inventory/${item.key}`);
-                    if (productInDb && productInDb.quantity !== undefined) {
+                    
+                    // Update whichever stock key exists in Database
+                    if (productInDb.stock !== undefined) {
+                        await update(productRef, { stock: newQty });
+                    } else if (productInDb.quantity !== undefined) {
                         await update(productRef, { quantity: newQty });
                     } else {
                         await update(productRef, { qty: newQty });
@@ -466,7 +476,7 @@
             for (let key in localProducts) {
                 if (localProducts[key].barcode && localProducts[key].barcode.toString() === barcode) {
                     const product = localProducts[key];
-                    const stock = product.quantity !== undefined ? product.quantity : (product.qty !== undefined ? product.qty : 0);
+                    const stock = getStockValue(product);
                     window.addToCart(key, product.name, product.price, stock);
                     found = true;
                     break;
