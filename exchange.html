@@ -413,6 +413,31 @@
         let returnItemData = null;
         let newItemData = null;
 
+        // Helper function to search inventory by exact barcode or base barcode (removing suffix after hyphen)
+        function findInInventory(searchCode) {
+            if (!searchCode) return null;
+            
+            // 1. Exact match
+            if (globalInventory[searchCode]) {
+                return { ...globalInventory[searchCode], barcodeKey: searchCode };
+            }
+
+            // 2. Base code match (e.g., DCK992517-2 -> DCK992517)
+            const baseCode = searchCode.split('-')[0];
+            if (globalInventory[baseCode]) {
+                return { ...globalInventory[baseCode], barcodeKey: baseCode };
+            }
+
+            // 3. Search through inventory keys for partial/prefix matches
+            for (const key in globalInventory) {
+                if (key.toLowerCase() === searchCode.toLowerCase() || key.toLowerCase() === baseCode.toLowerCase()) {
+                    return { ...globalInventory[key], barcodeKey: key };
+                }
+            }
+
+            return null;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -434,8 +459,10 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     const code = e.target.value.trim();
-                    if (globalInventory[code]) {
-                        returnItemData = { ...globalInventory[code], barcodeKey: code };
+                    const matchedItem = findInInventory(code);
+
+                    if (matchedItem) {
+                        returnItemData = matchedItem;
                         document.getElementById('retName').innerText = returnItemData.name || '-';
                         document.getElementById('retMeta').innerText = `${returnItemData.category || ''} / Size: ${returnItemData.size || ''}`;
                         document.getElementById('retPrice').innerText = `LKR ${Number(returnItemData.price).toFixed(2)}`;
@@ -452,8 +479,10 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     const code = e.target.value.trim();
-                    if (globalInventory[code]) {
-                        newItemData = { ...globalInventory[code], barcodeKey: code };
+                    const matchedItem = findInInventory(code);
+
+                    if (matchedItem) {
+                        newItemData = matchedItem;
                         document.getElementById('newName').innerText = newItemData.name || '-';
                         document.getElementById('newMeta').innerText = `${newItemData.category || ''} / Size: ${newItemData.size || ''}`;
                         document.getElementById('newPrice').innerText = `LKR ${Number(newItemData.price).toFixed(2)}`;
