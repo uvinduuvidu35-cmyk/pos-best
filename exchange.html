@@ -410,28 +410,49 @@
         const db = getDatabase(app);
 
         let globalInventory = {};
+        let globalSales = {};
         let returnItemData = null;
         let newItemData = null;
 
-        // Helper function to search inventory by exact barcode or base barcode (removing suffix after hyphen)
-        function findInInventory(searchCode) {
+        // Search through Sales records first, then Inventory
+        function findProductByBarcode(searchCode) {
             if (!searchCode) return null;
-            
-            // 1. Exact match
-            if (globalInventory[searchCode]) {
-                return { ...globalInventory[searchCode], barcodeKey: searchCode };
+            const cleanCode = searchCode.trim().toLowerCase();
+            const baseCode = cleanCode.split('-')[0];
+
+            // 1. Search in Sales history (Return Item)
+            for (const saleId in globalSales) {
+                const sale = globalSales[saleId];
+                const items = sale.items || sale.cart || (Array.isArray(sale) ? sale : []);
+                
+                if (Array.isArray(items)) {
+                    for (const item of items) {
+                        const itemBarcode = String(item.barcode || item.barcodeKey || item.id || '').toLowerCase();
+                        const itemSerial = String(item.serialBarcode || item.serial || '').toLowerCase();
+
+                        if (itemBarcode === cleanCode || itemSerial === cleanCode || itemBarcode === baseCode) {
+                            return {
+                                name: item.name || item.title || 'Returned Item',
+                                category: item.category || 'Footwear',
+                                size: item.size || 'N/A',
+                                price: item.price || item.unitPrice || 0,
+                                barcodeKey: item.barcodeKey || item.barcode || baseCode,
+                                source: 'sales'
+                            };
+                        }
+                    }
+                }
             }
 
-            // 2. Base code match (e.g., DCK992517-2 -> DCK992517)
-            const baseCode = searchCode.split('-')[0];
-            if (globalInventory[baseCode]) {
-                return { ...globalInventory[baseCode], barcodeKey: baseCode };
-            }
-
-            // 3. Search through inventory keys for partial/prefix matches
+            // 2. Search in Inventory directly
             for (const key in globalInventory) {
-                if (key.toLowerCase() === searchCode.toLowerCase() || key.toLowerCase() === baseCode.toLowerCase()) {
-                    return { ...globalInventory[key], barcodeKey: key };
+                const lowerKey = key.toLowerCase();
+                if (lowerKey === cleanCode || lowerKey === baseCode) {
+                    return {
+                        ...globalInventory[key],
+                        barcodeKey: key,
+                        source: 'inventory'
+                    };
                 }
             }
 
@@ -449,9 +470,19 @@
                 localStorage.setItem('theme', newTheme);
             });
 
-            // Fetch Inventory Data from Firebase
+            // Fetch Inventory Data
             onValue(ref(db, 'inventory'), (snapshot) => {
                 globalInventory = snapshot.val() || {};
+            });
+
+            // Fetch Sales Data
+            onValue(ref(db, 'sales'), (snapshot) => {
+                globalSales = snapshot.val() || {};
+            });
+            onValue(ref(db, 'orders'), (snapshot) => {
+                if (snapshot.exists()) {
+                    globalSales = { ...globalSales, ...snapshot.val() };
+                }
             });
 
             // Return Barcode Search
@@ -459,17 +490,17 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     const code = e.target.value.trim();
-                    const matchedItem = findInInventory(code);
+                    const foundItem = findProductByBarcode(code);
 
-                    if (matchedItem) {
-                        returnItemData = matchedItem;
+                    if (foundItem) {
+                        returnItemData = foundItem;
                         document.getElementById('retName').innerText = returnItemData.name || '-';
                         document.getElementById('retMeta').innerText = `${returnItemData.category || ''} / Size: ${returnItemData.size || ''}`;
                         document.getElementById('retPrice').innerText = `LKR ${Number(returnItemData.price).toFixed(2)}`;
                         document.getElementById('returnDetails').style.display = 'block';
                         updateCalculations();
                     } else {
-                        alert("Returned Item එකක් පද්ධතියේ හමු නොවීය!");
+                        alert("Returned Item එකක් Sales හෝ Inventory දත්ත අතර හමු නොවීය!");
                     }
                 }
             });
@@ -479,10 +510,10 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     const code = e.target.value.trim();
-                    const matchedItem = findInInventory(code);
+                    const foundItem = findProductByBarcode(code);
 
-                    if (matchedItem) {
-                        newItemData = matchedItem;
+                    if (foundItem) {
+                        newItemData = foundItem;
                         document.getElementById('newName').innerText = newItemData.name || '-';
                         document.getElementById('newMeta').innerText = `${newItemData.category || ''} / Size: ${newItemData.size || ''}`;
                         document.getElementById('newPrice').innerText = `LKR ${Number(newItemData.price).toFixed(2)}`;
@@ -502,20 +533,24 @@
                 }
 
                 try {
-                    // Update Stock for Returned Item (+1 Stock)
-                    const retRef = ref(db, `inventory/${returnItemData.barcodeKey}`);
-                    const updatedRetStock = (returnItemData.stock || 0) + 1;
-                    await update(retRef, { stock: updatedRetStock });
+                    // Update Stock (+1 Stock for Returned Item)
+                    if (globalInventory[returnItemData.barcodeKey]) {
+                        const retRef = ref(db, `inventory/${returnItemData.barcodeKey}`);
+                        const updatedRetStock = (globalInventory[returnItemData.barcodeKey].stock || 0) + 1;
+                        await update(retRef, { stock: updatedRetStock });
+                    }
 
-                    // Update Stock for New Item (-1 Stock)
-                    const newRef = ref(db, `inventory/${newItemData.barcodeKey}`);
-                    const updatedNewStock = Math.max(0, (newItemData.stock || 0) - 1);
-                    await update(newRef, { stock: updatedNewStock });
+                    // Update Stock (-1 Stock for New Item)
+                    if (globalInventory[newItemData.barcodeKey]) {
+                        const newRef = ref(db, `inventory/${newItemData.barcodeKey}`);
+                        const updatedNewStock = Math.max(0, (globalInventory[newItemData.barcodeKey].stock || 0) - 1);
+                        await update(newRef, { stock: updatedNewStock });
+                    }
 
-                    // Calculate net balance
+                    // Net balance calculation
                     const netBalance = Number(newItemData.price) - Number(returnItemData.price);
 
-                    // Save Exchange Record to Firebase under 'exchanges'
+                    // Save Exchange Record
                     const exchangeRef = ref(db, 'exchanges');
                     const newExchangePush = push(exchangeRef);
                     await set(newExchangePush, {
@@ -527,7 +562,7 @@
                         timestamp: new Date().toISOString()
                     });
 
-                    // Prepare printable receipt
+                    // Prepare receipt
                     document.getElementById('recDate').innerText = new Date().toLocaleString();
                     document.getElementById('recRetName').innerText = returnItemData.name;
                     document.getElementById('recRetPrice').innerText = Number(returnItemData.price).toFixed(2);
